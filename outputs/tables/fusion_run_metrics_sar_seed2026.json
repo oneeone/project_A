@@ -1,0 +1,11 @@
+{
+  "arch": "sar",
+  "seed": 2026,
+  "epochs": 15,
+  "best_epoch": 12,
+  "best_val_iou": 0.5349,
+  "params_m": 14.32,
+  "train_patches": 692,
+  "val_patches": 151,
+  "seconds": 111.8
+}

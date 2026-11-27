@@ -1,0 +1,75 @@
+{
+ "k": 5,
+ "rng": 2026,
+ "threshold": 0.44,
+ "pixel_area_m2_median": 75.13,
+ "clusters": [
+  {
+   "landcover_id": "LC0",
+   "kmeans_cluster": 3,
+   "sar_mean": 76.22,
+   "n_pixels": 1541366,
+   "share_pct": 14.98,
+   "true_flood_frac": 0.5749,
+   "pred_flood_frac": 0.7151,
+   "precision": 0.7889,
+   "recall": 0.9813,
+   "iou": 0.7773,
+   "area_abs_err_km2": 16.2341
+  },
+  {
+   "landcover_id": "LC1",
+   "kmeans_cluster": 0,
+   "sar_mean": 107.27,
+   "n_pixels": 3397119,
+   "share_pct": 33.02,
+   "true_flood_frac": 0.1507,
+   "pred_flood_frac": 0.1605,
+   "precision": 0.8297,
+   "recall": 0.8834,
+   "iou": 0.7478,
+   "area_abs_err_km2": 2.4904
+  },
+  {
+   "landcover_id": "LC2",
+   "kmeans_cluster": 1,
+   "sar_mean": 115.81,
+   "n_pixels": 1335404,
+   "share_pct": 12.98,
+   "true_flood_frac": 0.0436,
+   "pred_flood_frac": 0.027,
+   "precision": 0.7219,
+   "recall": 0.4475,
+   "iou": 0.3817,
+   "area_abs_err_km2": 1.6611
+  },
+  {
+   "landcover_id": "LC3",
+   "kmeans_cluster": 2,
+   "sar_mean": 124.85,
+   "n_pixels": 2644178,
+   "share_pct": 25.7,
+   "true_flood_frac": 0.1248,
+   "pred_flood_frac": 0.1276,
+   "precision": 0.8545,
+   "recall": 0.8737,
+   "iou": 0.7606,
+   "area_abs_err_km2": 0.5586
+  },
+  {
+   "landcover_id": "LC4",
+   "kmeans_cluster": 4,
+   "sar_mean": 140.78,
+   "n_pixels": 1371085,
+   "share_pct": 13.33,
+   "true_flood_frac": 0.2685,
+   "pred_flood_frac": 0.2694,
+   "precision": 0.9868,
+   "recall": 0.9902,
+   "iou": 0.9773,
+   "area_abs_err_km2": 0.0965
+  }
+ ],
+ "worst_iou_landcover": "LC2",
+ "note": "地类由光学 4 通道 KMeans 划分，按 SAR 均值从小到大编号；iou/召回/精准率在该地类像元内计算"
+}
