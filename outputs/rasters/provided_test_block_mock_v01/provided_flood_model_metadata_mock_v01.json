@@ -14,7 +14,37 @@
   2027,
   2028
  ],
+ "input_channels": [
+  "after_gf3_hh (SAR HH)",
+  "before_s2 band1 (Red)",
+  "before_s2 band2 (Green)",
+  "before_s2 band3 (Blue)",
+  "before_s2 band4 (Auxiliary Band 4，未官方确认为 NIR)"
+ ],
+ "random_seed": [
+  2026,
+  2027,
+  2028
+ ],
+ "uncertainty_definition": "K=3 个训练种子的概率方差 mean_k((p_k - mean_p)^2)，上界 0.25",
+ "source_image_dates": "unknown：附件文件名不含成像日期，仅标注 before/after 时相",
  "evaluation": {
+  "split": "test",
+  "iou": 0.8057,
+  "dice": 0.8924,
+  "f1": 0.8924,
+  "precision": 0.8545,
+  "recall": 0.9339,
+  "area_abs_error_km2": 14.987,
+  "area_rel_error": 0.0927,
+  "val": {
+   "iou": 0.8081,
+   "dice": 0.8939,
+   "f1": 0.8939,
+   "precision": 0.9228,
+   "recall": 0.8666,
+   "area_rel_error": -0.061
+  },
   "brier_test_calibrated": 0.0313,
   "ece_test_calibrated": 0.0161
  },
@@ -23,8 +53,14 @@
   "brier": 0.0313,
   "ece": 0.0161
  },
+ "validation_iou": 0.8081,
+ "validation_dice": 0.8939,
+ "area_relative_error": 0.0927,
+ "area_relative_error_split": "test",
  "split_rule": "mosaic_tiling_4x4_blocks",
- "created_at": "2026-11-27T22:32:11",
+ "git_commit": "9077ea1",
+ "git_dirty": true,
+ "created_at": "2026-11-27T23:02:08",
  "note": "mock 产物，仅用于验证四件套契约与出图；block 内含该块的 test 瓦片",
  "pixel_area_m2_median": 75.228,
  "pred_area_km2": 48.5817,
