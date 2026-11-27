@@ -1,0 +1,27 @@
+{
+ "threshold": 0.46,
+ "n_pixels": 10289152,
+ "n_positive": 2154407,
+ "unc_mean": 0.00144,
+ "unc_p99": 0.03488,
+ "unc_max": 0.22021,
+ "frac_zero_unc": 0.3301,
+ "error_rate_zero_unc": 0.0007,
+ "error_rate_positive_unc": 0.0701,
+ "unc_mean_wrong": 0.01231,
+ "unc_mean_correct": 0.0009,
+ "unc_ratio_wrong_over_correct": 13.62,
+ "error_rate_first_decile": 0.0017,
+ "error_rate_last_decile": 0.3914,
+ "error_rate_lift_top_vs_bottom": 230.24,
+ "unc_by_confusion": {
+  "tp": 0.00249,
+  "fp": 0.01322,
+  "fn": 0.01013,
+  "tn": 0.00049,
+  "n_tp": 2011931,
+  "n_fp": 342686,
+  "n_fn": 142476,
+  "n_tn": 7792059
+ }
+}

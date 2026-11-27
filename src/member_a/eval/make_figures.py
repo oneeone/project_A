@@ -5,6 +5,7 @@
     q1_training.png    3 个种子的 loss 与 val IoU 曲线
     q1_threshold.png   val 上的阈值敏感性（原始 vs 校准）
     q1_reliability.png 校准可靠性图
+    q1_uncertainty.png 不确定性分组与错判率
     q1_test_block.png  测试块的预测概率与二值掩膜
 运行：python -m src.member_a.eval.make_figures
 """
@@ -129,6 +130,28 @@ def fig_reliability() -> None:
     plt.close(fig)
 
 
+def fig_uncertainty() -> None:
+    bins = list(csv.DictReader(open(ROOT / "outputs" / "tables" / "uncertainty_error_bins.csv",
+                                     encoding="utf-8-sig")))
+    with open(ROOT / "outputs" / "tables" / "uncertainty_diag.json", encoding="utf-8") as f:
+        diag = json.load(f)
+    labels = ["方差=0"] + [f"D{r['decile']}" for r in bins]
+    rates = [diag["error_rate_zero_unc"] * 100] + [float(r["error_rate"]) * 100 for r in bins]
+    fig, ax = plt.subplots(figsize=(6.4, 3.6))
+    bars = ax.bar(range(len(rates)), rates, color=["#9ecae1"] + ["#3182bd"] * len(bins))
+    ax.set_xticks(range(len(rates)))
+    ax.set_xticklabels(labels, fontsize=9)
+    ax.set_xlabel("三种子方差分组（D1 最低 → D8 最高）")
+    ax.set_ylabel("像素级错判率 (%)")
+    ax.set_title("不确定性越高，错判越集中")
+    for b, v in zip(bars, rates):
+        ax.text(b.get_x() + b.get_width() / 2, v, f"{v:.1f}", ha="center", va="bottom", fontsize=7)
+    ax.grid(axis="y", alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(FIG / "q1_uncertainty.png", dpi=180)
+    plt.close(fig)
+
+
 def fig_block() -> None:
     base = ROOT / "outputs" / "rasters" / "provided_test_block_mock_v01"
     with rasterio.open(base / "provided_flood_probability_mock_v01.tif") as ds:
@@ -162,6 +185,7 @@ def main() -> int:
     fig_training()
     fig_threshold()
     fig_reliability()
+    fig_uncertainty()
     fig_block()
     for p in sorted(FIG.glob("q1_*.png")):
         print(f"  {p.relative_to(ROOT)}  {p.stat().st_size / 1e3:.0f} KB")
