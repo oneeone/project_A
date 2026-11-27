@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 
@@ -23,19 +24,24 @@ from sklearn.cluster import KMeans
 from src.member_a.common import ROOT, list_patches, load_paths, read_label, read_optical, read_sar
 
 OUT = ROOT / "outputs" / "tables"
-PROB_DIR = ROOT / "成员A产出" / "04_栅格结果" / "fusion_probs_v01"
 K = 5
 RNG = 2026
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--suffix", default="v01", help="与 eval_fusion 的 --suffix 一致")
+    args = ap.parse_args()
+    sfx = "" if args.suffix == "v01" else f"_{args.suffix}"
+    prob_dir = ROOT / "成员A产出" / "04_栅格结果" / f"fusion_probs_{args.suffix}"
+
     with open(OUT / "provided_split_manifest_v03.json", encoding="utf-8") as f:
         split_of = {p["patch_id"]: p["split"] for p in json.load(f)["patches"]}
-    with open(OUT / "fusion_eval_summary.json", encoding="utf-8") as f:
+    with open(OUT / f"fusion_eval_summary{sfx}.json", encoding="utf-8") as f:
         thr = float(json.load(f)["detail"]["dual"]["threshold_val_iou"])
 
     test = [p for p in list_patches(load_paths()) if split_of[p["patch_id"]] == "test"]
-    z = np.load(PROB_DIR / "test_probs_dual.npz")
+    z = np.load(prob_dir / "test_probs_dual.npz")
     prob = {int(pid): z["prob"][i] for i, pid in enumerate(z["patch_id"])}
     print(f"test {len(test)} 个 patch，判定阈值 {thr:.2f}")
 
@@ -102,14 +108,15 @@ def main() -> int:
         })
 
     OUT.mkdir(parents=True, exist_ok=True)
-    with open(OUT / "landcover_error_candidate_v01.csv", "w", encoding="utf-8-sig", newline="") as f:
+    with open(OUT / f"landcover_error{sfx}_candidate_v01.csv", "w", encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader()
         w.writerows(rows)
 
     worst = min(rows, key=lambda r: r["iou"])
-    with open(OUT / "landcover_error_summary.json", "w", encoding="utf-8") as f:
-        json.dump({"k": K, "rng": RNG, "threshold": thr, "pixel_area_m2_median": round(px_m2, 2),
+    with open(OUT / f"landcover_error{sfx}_summary.json", "w", encoding="utf-8") as f:
+        json.dump({"k": K, "rng": RNG, "threshold": thr, "weight_suffix": args.suffix,
+                   "pixel_area_m2_median": round(px_m2, 2),
                    "clusters": rows, "worst_iou_landcover": worst["landcover_id"],
                    "note": "地类由光学 4 通道 KMeans 划分，按 SAR 均值从小到大编号；"
                            "iou/召回/精准率在该地类像元内计算"},
