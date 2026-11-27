@@ -1,0 +1,16 @@
+{
+ "seeds": [
+  2026,
+  2027,
+  2028
+ ],
+ "split_version": "v03",
+ "threshold_raw": 0.38,
+ "threshold_calibrated": 0.46,
+ "threshold_area": 0.34,
+ "val_area_ratio_at_area_threshold": 0.9959,
+ "brier_test_raw": 0.0316,
+ "brier_test_calibrated": 0.0313,
+ "ece_test_raw": 0.0164,
+ "ece_test_calibrated": 0.0161
+}

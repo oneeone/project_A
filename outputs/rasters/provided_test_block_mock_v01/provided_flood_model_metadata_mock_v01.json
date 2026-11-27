@@ -1,0 +1,32 @@
+{
+ "model_version": "unet_resnet18_ensemble3_v01",
+ "status": "mock",
+ "region": "m1-r5c0",
+ "threshold": 0.46,
+ "threshold_selected_on": "val",
+ "label_semantics": "newly_inundated_only",
+ "crs": "EPSG:4326",
+ "resolution_m": 8.67,
+ "reference_grid": "provided_native_4326",
+ "ensemble_members": 3,
+ "training_seed": [
+  2026,
+  2027,
+  2028
+ ],
+ "evaluation": {
+  "brier_test_calibrated": 0.0313,
+  "ece_test_calibrated": 0.0161
+ },
+ "calibration": {
+  "method": "isotonic",
+  "brier": 0.0313,
+  "ece": 0.0161
+ },
+ "split_rule": "mosaic_tiling_4x4_blocks",
+ "created_at": "2026-11-27T22:32:11",
+ "note": "mock 产物，仅用于验证四件套契约与出图；block 内含该块的 test 瓦片",
+ "pixel_area_m2_median": 75.228,
+ "pred_area_km2": 48.5817,
+ "valid_pixels": 1048576
+}
