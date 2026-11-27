@@ -48,6 +48,10 @@ REQUIRED_FILES = [
     "configs/assessment.yaml",
     "configs/optimization.yaml",
     "src/common/contracts.py",
+    "src/member_c/risk_assessment.py",
+    "src/member_c/candidate_sites.py",
+    "src/member_c/facility_location.py",
+    "scripts/run_member_c_pipeline.py",
     "paper/main.tex",
 ]
 

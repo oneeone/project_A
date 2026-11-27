@@ -12,6 +12,7 @@ xarray
 opencv-python
 scikit-image
 scikit-learn
+scipy
 xgboost
 lightgbm
 torch

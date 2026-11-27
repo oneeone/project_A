@@ -1,11 +1,14 @@
 task: capacitated_maximum_coverage_facility_location
 
 baseline:
-  max_sites: null
-  max_travel_time_min: null
-  default_capacity: null
-  flood_safe_threshold: null
-  uncertainty_safe_threshold: null
+  max_sites: 8
+  max_travel_time_min: 30
+  default_capacity: 1000
+  flood_safe_threshold: 0.20
+  uncertainty_quantile: 0.75
+  time_penalty_weight: 0.05
+  random_baseline_repeats: 100
+  random_seed: 2026
 
 candidate_types:
   - school
@@ -29,3 +32,8 @@ scenarios:
   - optimistic
   - neutral
   - pessimistic
+
+sensitivity:
+  max_sites: [5, 8, 10]
+  max_travel_time_min: [20, 30, 40]
+  default_capacity: [500, 1000, 1500]

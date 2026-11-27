@@ -13,12 +13,22 @@ intensity:
 risk:
   structure: hazard_times_exposure_times_access_penalty
   normalize_to_unit_interval: true
+  hazard_weights:
+    flood_area: 0.35
+    flood_ratio: 0.35
+    intensity: 0.20
+    mean_probability: 0.10
   baseline_weights:
     population: 0.45
     buildings: 0.20
     roads: 0.15
     facilities: 0.20
-  accessibility_penalty: null
+  accessibility_weights:
+    travel_time: 0.50
+    inverse_road_density: 0.30
+    slope: 0.20
+  accessibility_penalty: 0.50
+  demand_risk_weight: 0.50
 
 sensitivity:
   weight_changes: [-0.20, -0.10, 0.10, 0.20]

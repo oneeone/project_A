@@ -23,10 +23,18 @@ ASSESSMENT_REQUIRED_COLUMNS = [
 ]
 
 ASSESSMENT_MEMBER_C_COLUMNS = [
+    "total_population",
     "affected_population",
+    "total_buildings",
     "affected_buildings",
+    "building_area_km2",
+    "total_road_km",
     "flooded_road_km",
+    "total_facilities",
     "affected_facilities",
+    "nearest_safe_facility_time_min",
+    "road_density_km_per_km2",
+    "mean_slope_degree",
     "accessibility_score",
     "risk_score",
     "demand_score",

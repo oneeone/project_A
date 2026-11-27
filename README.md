@@ -11,6 +11,7 @@
 3. docs/definitions.md
 4. docs/contracts.md
 5. docs/workflow_3days.md
+6. docs/member_c_execution_guide.md
 
 未完成启动检查前，不开始正式训练、正式面积计算或正式优化。
 
@@ -61,3 +62,7 @@
 - 数据来自两个主要地理区域，不允许随机切片划分训练和测试。
 
 详细信息见 docs/provided_data_audit.md。
+
+## 成员C实现状态
+
+问题4、5的可运行代码已放入src/member_c。可以用mock数据完成风险评估、候选点筛选、容量约束选址、基线对比、三种情景和敏感性分析。正式使用说明见docs/member_c_execution_guide.md。
