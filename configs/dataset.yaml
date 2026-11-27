@@ -1,0 +1,40 @@
+random_seed: 2026
+
+provided_dataset:
+  sample_count: 1000
+  id_start: 1001
+  id_end: 2000
+  pair_by_numeric_suffix: true
+
+optical:
+  shape: [256, 256, 4]
+  dtype: uint8
+  crs: EPSG:4326
+  band_names:
+    - red
+    - green
+    - blue
+    - auxiliary_band_4
+
+sar:
+  shape: [256, 256, 1]
+  dtype: uint8
+  source_tag: GF3
+  polarization: HH
+  crs: EPSG:4326
+  calibrated_db: false
+
+label:
+  shape: [256, 256]
+  dtype: uint8
+  background_value: 0
+  flood_value: 1
+  ignore_value: 255
+
+split:
+  method: spatial_block
+  random_tile_split_allowed: false
+  train_ratio: 0.70
+  validation_ratio: 0.15
+  test_ratio: 0.15
+  cross_region_test: true

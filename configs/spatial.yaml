@@ -1,0 +1,26 @@
+units:
+  area: km2
+  distance: km
+  road_length: km
+  elevation: m
+  travel_time: min
+
+provided_dataset:
+  native_crs: EPSG:4326
+  keep_native_arrays_for_training: true
+  approximate_pixel_area_m2: 74.93
+  area_method: geodesic_or_region_projected
+
+hengzhou:
+  study_boundary: null
+  target_crs: EPSG:32649
+  target_crs_status: provisional_until_boundary_check
+  raster_resolution_m: 10
+  assessment_grid_size_m: 1000
+  float_nodata: -9999
+  mask_nodata: 255
+
+resampling:
+  continuous: bilinear
+  categorical: nearest
+  population: mass_preserving

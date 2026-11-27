@@ -1,0 +1,31 @@
+task: capacitated_maximum_coverage_facility_location
+
+baseline:
+  max_sites: null
+  max_travel_time_min: null
+  default_capacity: null
+  flood_safe_threshold: null
+  uncertainty_safe_threshold: null
+
+candidate_types:
+  - school
+  - hospital
+  - stadium
+  - shelter
+  - public_facility
+
+constraints:
+  require_road_connection: true
+  exclude_high_confidence_flood: true
+  exclude_high_uncertainty: true
+
+comparisons:
+  - random_selection
+  - population_priority
+  - risk_priority
+  - optimized_selection
+
+scenarios:
+  - optimistic
+  - neutral
+  - pessimistic

@@ -1,0 +1,29 @@
+random_seed: 2026
+input_channels: 5
+output_classes: 1
+
+baseline:
+  enabled: true
+  model: random_forest
+
+segmentation:
+  model: unet
+  loss:
+    bce_weight: 0.5
+    dice_weight: 0.5
+  threshold_source: validation_set
+  threshold: null
+
+uncertainty:
+  method: ensemble_variance
+  ensemble_size: 3
+
+evaluation:
+  metrics:
+    - precision
+    - recall
+    - f1
+    - iou
+    - dice
+    - area_absolute_error_km2
+    - area_relative_error

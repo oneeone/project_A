@@ -1,0 +1,24 @@
+grid_size_m: 1000
+
+intensity:
+  area_weight: 0.5
+  ratio_weight: 0.5
+  threshold_method: jenks_or_clustering
+  classes:
+    - general
+    - relatively_strong
+    - strong
+    - extremely_strong
+
+risk:
+  structure: hazard_times_exposure_times_access_penalty
+  normalize_to_unit_interval: true
+  baseline_weights:
+    population: 0.45
+    buildings: 0.20
+    roads: 0.15
+    facilities: 0.20
+  accessibility_penalty: null
+
+sensitivity:
+  weight_changes: [-0.20, -0.10, 0.10, 0.20]

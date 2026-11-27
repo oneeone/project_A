@@ -1,0 +1,7 @@
+provided_optical_dir: "D:/APMCM/data/provided/optical"
+provided_sar_dir: "D:/APMCM/data/provided/sar"
+provided_label_dir: "D:/APMCM/data/provided/labels"
+hengzhou_data_dir: "D:/APMCM/data/hengzhou"
+external_data_dir: "D:/APMCM/data/external"
+model_dir: "D:/APMCM/models"
+output_dir: "D:/APMCM/outputs"

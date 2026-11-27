@@ -1,0 +1,75 @@
+# Local configuration and secrets
+configs/paths.local.yaml
+.env
+secrets.yaml
+
+# Raw and intermediate data
+data/raw/*
+data/interim/*
+data/processed/*
+data/external/*
+data/mock/*
+!data/**/.gitkeep
+!data/**/README.md
+
+# Large geospatial files
+*.tif
+*.tiff
+*.jp2
+*.img
+*.hdf
+*.h5
+*.nc
+*.shp
+*.shx
+*.dbf
+*.prj
+*.gpkg
+
+# Models and arrays
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.npy
+*.npz
+*.pkl
+*.joblib
+
+# Archives
+*.zip
+*.7z
+*.rar
+*.tar
+*.gz
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Experiment logs
+runs/
+wandb/
+lightning_logs/
+checkpoints/
+logs/
+
+# LaTeX temporary files
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# System
+.DS_Store
+Thumbs.db
