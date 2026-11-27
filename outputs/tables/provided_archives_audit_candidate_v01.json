@@ -1,0 +1,53 @@
+{
+  "optical": {
+    "archive_name": "pre-disaster optical images.zip",
+    "bad_member": null,
+    "tiff_count": 1000,
+    "id_min": 1001,
+    "id_max": 2000,
+    "unique_id_count": 1000,
+    "sample": {
+      "name": "pre-disaster optical images/before_s2_1001.TIF",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA",
+      "frames": 1
+    }
+  },
+  "sar": {
+    "archive_name": "post-disaster SAR images.zip",
+    "bad_member": null,
+    "tiff_count": 1000,
+    "id_min": 1001,
+    "id_max": 2000,
+    "unique_id_count": 1000,
+    "sample": {
+      "name": "post-disaster SAR images/after_gf3_hh_1001.TIF",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "L",
+      "frames": 1
+    }
+  },
+  "label": {
+    "archive_name": "label information.zip",
+    "bad_member": null,
+    "tiff_count": 1000,
+    "id_min": 1001,
+    "id_max": 2000,
+    "unique_id_count": 1000,
+    "sample": {
+      "name": "label information/label_1001.tif",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "L",
+      "frames": 1
+    }
+  }
+}

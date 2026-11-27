@@ -3,12 +3,12 @@ grid_size_m: 1000
 intensity:
   area_weight: 0.5
   ratio_weight: 0.5
-  threshold_method: jenks_or_clustering
+  threshold_method: jenks
   classes:
-    - general
-    - relatively_strong
-    - strong
-    - extremely_strong
+    - 一般
+    - 较强
+    - 强
+    - 极强
 
 risk:
   structure: hazard_times_exposure_times_access_penalty
