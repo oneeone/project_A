@@ -1,0 +1,80 @@
+{
+ "model_version": "unet_resnet18_ensemble3_v01",
+ "status": "candidate",
+ "threshold": 0.46,
+ "threshold_selected_on": "val",
+ "label_semantics": "newly_inundated_only",
+ "crs": "EPSG:4326",
+ "reference_grid": "provided_native_4326",
+ "ensemble_members": 3,
+ "training_seed": [
+  2026,
+  2027,
+  2028
+ ],
+ "input_channels": [
+  "after_gf3_hh (SAR HH)",
+  "before_s2 band1 (Red)",
+  "before_s2 band2 (Green)",
+  "before_s2 band3 (Blue)",
+  "before_s2 band4 (Auxiliary Band 4，未官方确认为 NIR)"
+ ],
+ "random_seed": [
+  2026,
+  2027,
+  2028
+ ],
+ "uncertainty_definition": "K=3 个训练种子的概率方差 mean_k((p_k - mean_p)^2)，上界 0.25",
+ "source_image_dates": "unknown：附件文件名不含成像日期，仅标注 before/after 时相",
+ "calibration": {
+  "method": "isotonic",
+  "threshold": 0.46,
+  "brier": 0.0313,
+  "ece": 0.0161
+ },
+ "validation_iou": 0.8081,
+ "validation_dice": 0.8939,
+ "area_relative_error": 0.0927,
+ "area_relative_error_split": "test",
+ "evaluation": {
+  "split": "test",
+  "iou": 0.8057,
+  "dice": 0.8924,
+  "f1": 0.8924,
+  "precision": 0.8545,
+  "recall": 0.9339,
+  "area_abs_error_km2": 14.987,
+  "area_rel_error": 0.0927,
+  "val": {
+   "iou": 0.8081,
+   "dice": 0.8939,
+   "f1": 0.8939,
+   "precision": 0.9228,
+   "recall": 0.8666,
+   "area_rel_error": -0.061
+  },
+  "brier_test_calibrated": 0.0313,
+  "ece_test_calibrated": 0.0161
+ },
+ "split_rule": "mosaic_tiling_4x4_blocks",
+ "git_commit": "4ff4bc2",
+ "git_dirty": true,
+ "created_at": "2026-11-27T23:11:58",
+ "region": "mosaic_1",
+ "resolution_m": 8.67,
+ "coverage": {
+  "mosaic_id": 1,
+  "patches": 450,
+  "grid_cells": 510,
+  "fill_ratio": 0.8824,
+  "splits": {
+   "train": 307,
+   "val": 60,
+   "test": 83
+  }
+ },
+ "note": "整片镶嵌推理；空洞为附件中不存在的瓦片，已填 NoData。val/test 瓦片直接复用 eval_unet.py 冻结的校准概率，train 瓦片用同一 isotonic 曲线（全量 val 拟合）定标。",
+ "pixel_area_m2_median": 75.191,
+ "pred_area_km2": 362.1931,
+ "valid_pixels": 29491200
+}
