@@ -119,3 +119,50 @@ service_assignment.csv必须包含：
     hengzhou_flood_probability_candidate_v02.tif
 
 禁止覆盖final结果。正式变更必须增加版本号并填写docs/change_log.md。
+
+## 6. A交付B的强制校验
+
+交付前A必须本地跑通，B收到后复跑一次；退出码为0才允许进入下一环节。
+
+    python scripts/verify_raster_contract.py --dir <A输出目录> --ref hengzhou_reference_grid.tif
+
+脚本检查：
+
+1. 四个文件齐备（probability、mask、uncertainty、metadata）；
+2. CRS、transform、width、height、nodata 与参考栅格完全一致；
+3. dtype 为 float32、uint8、float32；
+4. 概率值域0至1，不确定性0至0.25，掩膜只含0、1、255；
+5. 无 NaN 或 Inf；
+6. mask等于1处 probability 大于等于 threshold 的比例不低于99%；
+7. metadata 必填字段齐全。
+
+### 6.1 metadata 追加必填字段
+
+在本文第2节清单之外追加：
+
+| 字段 | 含义 |
+|---|---|
+| crs | 输出栅格坐标系，固定 EPSG:32649 |
+| resolution_m | 输出分辨率，固定 10 |
+| label_semantics | newly_inundated_only 或 post_event_water_including_permanent |
+| ensemble_members | 集成成员数，不小于3 |
+| split_rule | 数据划分方式标识 |
+| calibration.method | none、platt 或 isotonic |
+| calibration.brier | Brier 分数 |
+| calibration.ece | 期望校准误差 |
+
+### 6.2 概率必须校准
+
+成员C用 flood_prob 小于 0.20 判定安全候选点、用概率加权人口估计受灾人口，这两处都默认A输出的是校准概率，而不是原始模型打分。
+因此 final 版本必须同时提供 reliability.csv（列：bin、mean_pred、frac_pos、count）与 calibration 指标。
+
+### 6.3 标签语义提醒
+
+标签语义按 docs/frozen_constraints.md 第2节暂定为新增淹没。A在首个实验必须做一次核验：
+若标签值为1的区域在灾前光学影像中已是大片水体，说明标签包含永久水体，此时必须立即写入 docs/change_log.md 并通知B调整差集逻辑。
+
+### 6.4 分块划分
+
+训练、验证、测试必须按空间块划分（见 configs/spatial.yaml 的 block_split_mandatory）。
+附件约90个连续块，相邻 patch 中心距 2.09 km，存在 89 处超过 10 km 的块间跳变；把相邻 patch 随机分到训练与测试会让 IoU 虚高。
+划分结果写入 provided_split_manifest_v01.json，三名成员共用同一份。

@@ -24,3 +24,35 @@ resampling:
   continuous: bilinear
   categorical: nearest
   population: mass_preserving
+
+# ---- 以下由成员A复核附件后补充（2026-11-27），只增不改 ----
+provided_dataset_facts:
+  patch_count: 1000
+  patch_size_px: 256
+  pixel_size_deg: 0.00008333
+  pixel_area_m2_range: [74.78, 75.39]
+  patch_area_km2: 4.91
+  pixel_area_trap: "禁止用 10m x 10m = 100 m2 乘像素数，会高估面积约 33%"
+  block_count_est: 90
+  adjacent_patch_distance_km: 2.09
+  inter_block_jumps_gt_10km: 89
+  block_split_mandatory: true
+  sar_bit_depth: 8
+  sar_db_available: false
+
+threshold_policy:
+  global_single_threshold: true
+  selected_on: validation
+  forbidden_on: [test_set, hengzhou_result, manual_tuning]
+  frozen_into: "model_metadata.json -> threshold"
+  mask_rule: "mask = 1 if and only if probability >= threshold and probability != nodata"
+  sensitivity_owner: B
+  sensitivity_values: [0.40, 0.45, 0.50, 0.55, 0.60]
+  note: "阈值只由A定一次；B用同一概率图自行扫阈值做敏感性分析，避免A反复重算"
+
+uncertainty_contract:
+  unit: variance
+  formula: "mean_k((p_k - mean_p)^2)"
+  upper_bound: 0.25
+  min_members: 3
+  nodata: -9999
