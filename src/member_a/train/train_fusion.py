@@ -187,6 +187,7 @@ def main() -> int:
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--encoder", default="resnet18")
     ap.add_argument("--limit", type=int, default=0, help="仅用前 N 个训练 patch（冒烟用）")
+    ap.add_argument("--suffix", default="v01", help="产物版本后缀，如 v01/e30")
     args = ap.parse_args()
 
     tag = f"{args.arch}_seed{args.seed}"
@@ -223,10 +224,10 @@ def main() -> int:
 
     out_dir = ROOT / "outputs" / "tables"
     out_dir.mkdir(parents=True, exist_ok=True)
-    hist_path = out_dir / f"fusion_train_history_{tag}.csv"
+    hist_path = out_dir / f"fusion_train_history_{tag}_{args.suffix}.csv"
     model_dir = ROOT / "成员A产出" / "02_模型权重"
     model_dir.mkdir(parents=True, exist_ok=True)
-    ckpt_path = model_dir / f"fusion_{tag}_v01.pth"
+    ckpt_path = model_dir / f"fusion_{tag}_{args.suffix}.pth"
     best_iou, best_epoch, rows = 0.0, -1, []
 
     for ep in range(1, args.epochs + 1):
@@ -271,7 +272,7 @@ def main() -> int:
             "best_epoch": best_epoch, "best_val_iou": round(best_iou, 4),
             "params_m": round(n_param, 2), "train_patches": len(train_rec),
             "val_patches": len(val_rec), "seconds": round(time.time() - t0, 1)}
-    with open(out_dir / f"fusion_run_metrics_{tag}.json", "w", encoding="utf-8") as f:
+    with open(out_dir / f"fusion_run_metrics_{tag}_{args.suffix}.json", "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
 
     print(f"\n[{tag}] 最佳 val IoU {best_iou:.4f} @ epoch {best_epoch}", flush=True)

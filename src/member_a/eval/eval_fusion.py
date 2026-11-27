@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 
+import argparse
 import csv
 import json
 import time
@@ -32,13 +33,12 @@ ARCHS = ("dual", "early", "optical", "sar")
 THRS = np.round(np.arange(0.20, 0.81, 0.02), 2)
 MODEL_DIR = ROOT / "成员A产出" / "02_模型权重"
 OUT = ROOT / "outputs" / "tables"
-PROB_DIR = ROOT / "成员A产出" / "04_栅格结果" / "fusion_probs_v01"
 
 
-def load_models(arch: str, device: torch.device) -> tuple[list, str]:
+def load_models(arch: str, device: torch.device, suffix: str) -> tuple[list, str]:
     models, encoder = [], "resnet18"
     for s in SEEDS:
-        p = MODEL_DIR / f"fusion_{arch}_seed{s}_v01.pth"
+        p = MODEL_DIR / f"fusion_{arch}_seed{s}_{suffix}.pth"
         if not p.exists():
             print(f"  [跳过] 缺权重 {p.name}")
             continue
@@ -92,6 +92,11 @@ def aggregate(recs: list[dict], probs: list, thr: float) -> dict:
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--suffix", default="v01", help="权重版本后缀，与训练时的 --suffix 一致")
+    args = ap.parse_args()
+    sfx = "" if args.suffix == "v01" else f"_{args.suffix}"
+    prob_dir = ROOT / "成员A产出" / "04_栅格结果" / f"fusion_probs_{args.suffix}"
     t0 = time.time()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     with open(OUT / "provided_split_manifest_v03.json", encoding="utf-8") as f:
@@ -112,12 +117,12 @@ def main() -> int:
     rows, sweep_rows, summary = [], [], {}
     cache = {}
     for arch in ARCHS:
-        models, encoder = load_models(arch, device)
+        models, encoder = load_models(arch, device, args.suffix)
         if not models:
             print(f"[{arch}] 无可用权重，跳过")
             continue
         t1 = time.time()
-        pv, _ = infer(models, val, device, arch)
+        pv, uv = infer(models, val, device, arch)
         pt, ut = infer(models, test, device, arch)
         print(f"[{arch}] {len(models)} 个种子推理完成 {time.time() - t1:.1f}s")
 
@@ -136,7 +141,7 @@ def main() -> int:
                      "oa": round(m["oa"], 4), "pred_area_km2": round(m["pred_area_km2"], 3),
                      "true_area_km2": round(m["true_area_km2"], 3),
                      "area_rel_err": round(m["area_rel_err"], 4)})
-        summary[arch] = {"seeds": [s for s in SEEDS if (MODEL_DIR / f"fusion_{arch}_seed{s}_v01.pth").exists()],
+        summary[arch] = {"seeds": [s for s in SEEDS if (MODEL_DIR / f"fusion_{arch}_seed{s}_{args.suffix}.pth").exists()],
                          "encoder": encoder, "threshold_val_iou": best_thr,
                          "val_iou": round(best_iou, 4),
                          "test_iou": round(m["iou"], 4), "test_f1": round(m["f1"], 4),
@@ -159,29 +164,30 @@ def main() -> int:
             summary["dual"]["threshold_area"] = best_area
             summary["dual"]["val_area_ratio"] = round(best_ratio, 4)
             print(f"[dual] 面积校准阈值 {best_area:.2f}（val 面积比 {best_ratio:.3f}）")
-            cache = {"val": (pv, None), "test": (pt, ut)}
+            cache = {"val": (pv, uv), "test": (pt, ut)}
 
-    with open(OUT / "q2_ablation_candidate_v01.csv", "w", encoding="utf-8-sig", newline="") as f:
+    with open(OUT / f"q2_ablation{sfx}_candidate_v01.csv", "w", encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader(); w.writerows(rows)
-    with open(OUT / "q2_threshold_sweep.csv", "w", encoding="utf-8-sig", newline="") as f:
+    with open(OUT / f"q2_threshold_sweep{sfx}.csv", "w", encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["arch", "threshold", "val_iou"])
         w.writeheader(); w.writerows(sweep_rows)
 
     if cache:
-        PROB_DIR.mkdir(parents=True, exist_ok=True)
+        prob_dir.mkdir(parents=True, exist_ok=True)
         for split, (pr, un) in cache.items():
             np.savez_compressed(
-                PROB_DIR / f"{split}_probs_dual.npz",
+                prob_dir / f"{split}_probs_dual.npz",
                 patch_id=np.array([p["patch_id"] for p in (val if split == "val" else test)]),
                 prob=np.stack(pr).astype(np.float16),
                 unc=np.stack(un).astype(np.float16),
             )
-        summary["prob_cache"] = str(PROB_DIR.relative_to(ROOT))
+        summary["prob_cache"] = str(prob_dir.relative_to(ROOT))
 
-    with open(OUT / "fusion_eval_summary.json", "w", encoding="utf-8") as f:
-        json.dump({"seeds": list(SEEDS), "archs": list(ARCHS), "detail": summary,
-                   "seconds": round(time.time() - t0, 1)}, f, ensure_ascii=False, indent=1)
+    with open(OUT / f"fusion_eval_summary{sfx}.json", "w", encoding="utf-8") as f:
+        json.dump({"seeds": list(SEEDS), "archs": list(ARCHS), "weight_suffix": args.suffix,
+                   "detail": summary, "seconds": round(time.time() - t0, 1)},
+                  f, ensure_ascii=False, indent=1)
 
     print("\n消融结果（test，阈值由 val 选定）：")
     for r in rows:
