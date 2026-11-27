@@ -1,0 +1,7 @@
+﻿split,region,mosaic_id,n_patches,n_blocks,water_frac_mean
+train,west,0,385,33,0.2217
+train,east,1,307,27,0.1628
+val,west,4,75,9,0.1551
+val,east,2,76,9,0.133
+test,west,0,74,6,0.2245
+test,east,1,83,6,0.1959
