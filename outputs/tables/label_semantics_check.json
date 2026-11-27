@@ -1,0 +1,14 @@
+{
+ "verdict": "newly_inundated_only",
+ "description": "超过六成淹没像素在灾前不是暗水体，标签只标新增淹没",
+ "n_patches": 146,
+ "dark_threshold": 60,
+ "opt_bright_pos_mean": 73.68,
+ "opt_bright_neg_mean": 63.53,
+ "opt_dark_frac_pos_mean": 0.2554,
+ "opt_dark_frac_neg_mean": 0.4188,
+ "newly_flooded_frac_mean": 0.7446,
+ "sar_pos_mean": 48.08,
+ "sar_neg_mean": 130.8,
+ "sar_dark_ratio": 0.368
+}

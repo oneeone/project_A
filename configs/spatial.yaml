@@ -34,8 +34,12 @@ provided_dataset_facts:
   patch_area_km2: 4.91
   pixel_area_trap: "禁止用 10m x 10m = 100 m2 乘像素数，会高估面积约 33%"
   block_count_est: 90
+  mosaic_count: 5
+  mosaic_sizes: [512, 450, 16, 12, 10]
+  tile_spacing_km_xy: [2.078, 2.359]
   adjacent_patch_distance_km: 2.09
   inter_block_jumps_gt_10km: 89
+  note_layout: "2.09km 是同一片镶嵌内的行内步长；1000 个 patch 实际只落在 5 片镶嵌上，划分必须按 4x4 瓦片子块切"
   block_split_mandatory: true
   sar_bit_depth: 8
   sar_db_available: false
@@ -56,3 +60,14 @@ uncertainty_contract:
   upper_bound: 0.25
   min_members: 3
   nodata: -9999
+
+label_semantics_verified:
+  value: newly_inundated_only
+  verified_on: "2026-11-27"
+  evidence:
+    n_patches: 146
+    opt_bright_pos: 73.7
+    opt_bright_neg: 63.5
+    dark_water_frac_pos: 0.255
+    sar_bright_ratio_pos_neg: 0.368
+  action_for_B: "不要再对 A 的 mask 做一次减去灾前水体的差集操作"
