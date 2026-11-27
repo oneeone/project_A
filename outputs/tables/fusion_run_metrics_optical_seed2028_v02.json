@@ -1,0 +1,11 @@
+{
+  "arch": "optical",
+  "seed": 2028,
+  "epochs": 30,
+  "best_epoch": 26,
+  "best_val_iou": 0.5482,
+  "params_m": 14.33,
+  "train_patches": 692,
+  "val_patches": 151,
+  "seconds": 196.5
+}

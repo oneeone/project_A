@@ -1,0 +1,11 @@
+{
+  "arch": "dual",
+  "seed": 2027,
+  "epochs": 30,
+  "best_epoch": 30,
+  "best_val_iou": 0.8072,
+  "params_m": 26.3,
+  "train_patches": 692,
+  "val_patches": 151,
+  "seconds": 256.2
+}

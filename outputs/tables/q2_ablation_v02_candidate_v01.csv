@@ -1,0 +1,6 @@
+﻿model,criterion,split,threshold,iou,f1,precision,recall,oa,pred_area_km2,true_area_km2,area_rel_err
+fusion_dual_3seed,iou,test,0.42,0.8031,0.8908,0.8502,0.9355,0.952,177.805,161.636,0.1
+fusion_dual_3seed,area,test,0.28,0.7907,0.8831,0.8222,0.9537,0.9471,187.448,161.636,0.1597
+fusion_early_3seed,iou,test,0.36,0.8039,0.8913,0.8466,0.941,0.9519,179.638,161.636,0.1114
+fusion_optical_3seed,iou,test,0.46,0.6506,0.7884,0.7817,0.7952,0.9106,164.34,161.636,0.0167
+fusion_sar_3seed,iou,test,0.6,0.6362,0.7776,0.7613,0.7946,0.9048,168.79,161.636,0.0443
