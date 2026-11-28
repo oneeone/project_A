@@ -51,6 +51,7 @@
 - uncertainty_definition
 - source_image_dates
 - git_commit
+- verification（A 侧自检结论：a_verifier.exit + b_contract（pass/skipped/问题列表）+ checked_at）
 
 ## 3. B交付C：正式评估网格
 

@@ -13,6 +13,7 @@
     成员A产出/05_输入/hengzhou_p0_v01/hengzhou_reference_grid_final_v01.tif
     成员A产出/05_输入/hengzhou_p0_v01/hengzhou_grid_1km.json
     成员A产出/05_输入/hengzhou_p0_v01/hengzhou_input_metadata.json
+    成员A产出/05_输入/hengzhou_p0_v01/b_raster_contracts.py   （B 的校验器，供离线复验）
     成员A产出/05_输入/hengzhou_p0_v01/fetch_manifest.json
 """
 
@@ -37,6 +38,8 @@ REQUIRED = {
     "grid_1km": "outputs/tables/hengzhou_grid_1km.json",
     "input_metadata": "outputs/tables/hengzhou_input_metadata.json",
 }
+# 随交接一并取回 B 的契约校验器，A 侧用它对自家产物做一遍独立判定
+CONTRACT_SRC = "src/member_b/raster_contracts.py"
 # P1 尚未交付，脚本只用于报告缺失，不报错
 P1_PATTERNS = {
     "stack": ["hengzhou_stack_final_v01.tif", "hengzhou_stack_final_v01.zip"],
@@ -96,6 +99,16 @@ def main() -> int:
             p.write_bytes(data)
             written[p.name] = {"bytes": len(data), "sha256": sha256(data)}
 
+    # B 的校验器（存在才取；取不到不报错，只是少一道复验）
+    b_contract = None
+    if CONTRACT_SRC in paths:
+        data = git_show(args.rev, CONTRACT_SRC)
+        p = out_dir / "b_raster_contracts.py"
+        p.write_bytes(data)
+        written[p.name] = {"bytes": len(data), "sha256": sha256(data),
+                           "source": CONTRACT_SRC}
+        b_contract = p.name
+
     # 可选：P1 影像栈与永久水体
     p1_status: dict[str, str] = {}
     for key, candidates in P1_PATTERNS.items():
@@ -152,6 +165,7 @@ def main() -> int:
         "geometry": geometry,
         "metadata_matches_reference": meta_matches,
         "grid_1km": grid_info,
+        "b_contract_module": b_contract,
         "p1_pending": p1_status,
     }
     (out_dir / "fetch_manifest.json").write_text(
@@ -170,6 +184,7 @@ def main() -> int:
         print(f"  metadata_matches_reference={meta_matches}")
     if grid_info:
         print(f"  grid cells={grid_info['cell_count']} unique_ids={grid_info['unique_ids']}")
+    print(f"  b_contract={b_contract}")
     print(f"  p1: stack={p1_status['stack']} permanent_water={p1_status['permanent_water']}")
     return 1 if missing else 0
 
