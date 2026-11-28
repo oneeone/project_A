@@ -12,29 +12,30 @@ A 拿到空网格当天即可把横州推理框架、边缘 padding、四件套�
 
 ## 1. 当前状态
 
-| 项 | 状态（2026-11-28 核查） |
+| 项 | 状态（2026-11-29 核查） |
 |---|---|
-| `origin/member-b` 头部提交 | `50d6dbe`（11-27 23:41，"add flood intensity assessment pipeline"） |
-| 分支内 `.tif` / `.gpkg` / `.npz` 数量 | 0 |
-| 分支内含 `hengzhou` 路径数量 | 0 |
-| 参考网格 | 未冻结 |
-| 影像栈 | 未生成 |
+| `origin/member-b` 头部提交 | `cb18cf4`（11-29 00:09，"Add Hengzhou raster inputs via Git LFS"，已并入 `main` `edc2017`） |
+| P0 空间契约 | **已交付**（`a0e9713`）：参考网格、`study_area_mask`、行政边界、3690 格 GPKG、1 km 表、input metadata |
+| 1 km 网格 | **已冻结**：`grid_id` 固定 `G000001`–`G003690`，每格附 `row_start/row_stop/column_start/column_stop` 冻结窗口；A 侧已逐格对账，掩膜像元数 × 100 m² 与 `grid_area_km2` 偏差为零 |
+| P1 影像栈与永久水体 | **已入库**：Git LFS 提交 `data/processed/hengzhou_stack_final_v01.tif`（481.6 MB）与 `permanent_water_final_v01.tif`（233 KB），SHA-256 与 B 交付文档一致 |
+| A 侧状态 | 推理链路、四件套导出、双契约校验已跑通；`hengzhou_mock_v01` 已交付 C 联调，P1 落地后即可出真 `candidate` |
 
-原因见 `docs/member_b_runbook.md` 第8节：横州市行政边界、同轨Sentinel-1灾前/灾中、灾前Sentinel-2、DEM、JRC裁剪结果均未取得，因此参考栅格与输入栈无法冻结。
-
-因此本交接**当前处于"合同已冻结、交付物为零"状态**。第 8 节给出了一个不依赖任何卫星影像的最小可开工集合，建议优先执行。
+原“交付物为零”的判断已作废；第 12 节 P0/P1 步骤均已执行完成，剩余工作是 A 侧推理与交接二。
 
 ## 2. 交付清单
 
 | 优先级 | 文件名（逐字） | 内容 | 交付渠道 | 缺失后果 |
 |---|---|---|---|---|
-| P0 | `hengzhou_reference_grid_final_v01.tif` | 参考网格，允许全 NoData | 共享目录；空栅格建议 zip 进仓库 | 无法确定输出几何，A 的推理完全无法开始 |
-| P0 | `hengzhou_grid_1km.json` | 1 km 评估单元表 | 提交 `member-b` | 强度分级与 C 的评估网格无法建立 |
-| P1 | `hengzhou_stack_final_v01.tif` | 6 波段推理输入栈 | 共享目录 | 无法执行推理 |
-| P1 | `permanent_water_final_v01.tif` | 永久水体二值掩膜 | 共享目录 | 横州新增淹没面积系统性高估 |
+| P0 | `hengzhou_reference_grid_final_v01.tif` | 参考网格，整幅全 NoData，只定义几何 | `hengzhou_reference_grid_final_v01.zip` 进仓库 | 无法确定输出几何，A 的推理完全无法开始 |
+| P0 | `study_area_mask_final_v01.tif` | 研究区有效范围（`1`=研究区，`0`=区外，`255`=NoData） | 同上 zip | **有效范围无法界定**，会把区外像元当结果导出 |
+| P0 | `hengzhou_boundary_final_v01.geojson` | 行政边界（EPSG:4326，含来源与许可证） | 同上 zip | 论文无法交代研究区来源 |
+| P0 | `hengzhou_grid_1km_final_v01.gpkg` | 3690 格评估单元（含冻结像素窗口与逐格面积） | 同上 zip | 强度分级与 C 的评估网格无法建立 |
+| P0 | `hengzhou_grid_1km.json` | 1 km 评估单元表（`grid_id`/中心/面积） | 提交 `member-b` | C 侧对不齐格号 |
+| P1 | `hengzhou_stack_final_v01.tif` | 6 波段推理输入栈 | Git LFS `data/processed/` | 无法执行推理 |
+| P1 | `permanent_water_final_v01.tif` | 永久水体二值掩膜 | Git LFS `data/processed/` | 横州新增淹没面积系统性高估（永久水体 51.8594 km²） |
 | P1 | `hengzhou_input_metadata.json` | 波段、标度、日期、产品ID | 提交 `member-b` | 论文数据来源表无法填写；标度错则整幅结果作废 |
 
-所有栅格必须来自同一套网格与同一批影像。禁止"参考网格一版、影像栈另一版"。
+所有栅格必须来自同一套网格与同一批影像。禁止“参考网格一版、影像栈另一版”。
 
 ## 3. 交付渠道分工
 
@@ -86,6 +87,9 @@ outputs/samples/hengzhou_reference_grid_final_v01.zip   # 内含 tif
 - 连续量重采样用双线性，分类量与掩膜用最近邻。
 - 浮点 NoData `-9999`，掩膜 NoData `255`。
 - **冻结规则**：参考网格一经交付不得静默修改。确需修改必须提升版本号（`v02`），写入 `docs/change_log.md`，并由 A 重新跑一遍推理；不得只改栅格不通知。
+- **有效范围（B 侧 11-28 冻结，v03 纳入本规格）**：参考栅格整幅 `-9999`，**只定义空间几何**；研究区有效范围必须读 `study_area_mask_final_v01.tif == 1`。A 侧口径：`valid = 影像栈有效 ∩ study_area_mask == 1`，掩膜外一律 NoData，**不得**用参考栅格或影像有效值推断范围。
+- **1 km 网格冻结**：`grid_id` 固定 `G000001`–`G003690`，每格带 `row_start/row_stop/column_start/column_stop`；贴边格按真实裁剪计面积（例 `0.3708 / 0.5054 km²`），`Σgrid_area_km2 = 3452.8116 km²` 与掩膜面积逐格对账相等。
+- **研究区基准数**：掩膜内 34,528,116 像元（3452.812 km²）、掩膜外 26,497,807 像元；`optical_unfilled_pixel_count = 8` 属源数据缺测，A 侧覆盖率门限据此定为“区内漏覆盖 > 0.1% 才判致命”。
 
 ## 5. 影像栈波段与数值标度
 
@@ -212,6 +216,8 @@ A 收到后即可完成：滑窗推理框架、边缘 padding 策略、四件套
 
 A 逐项确认 10.1 全部条目，并额外检查三张 A 侧输出与参考网格的 `transform/width/height` 逐字段一致（容差 1e-9），以及 `src/member_b/raster_contracts.py` 的 `compare_signatures` 返回空列表。
 
+自 `v03` 起增加研究区口径复验：`python scripts/verify_raster_contract.py --dir <输出目录> --ref <参考网格> --study-mask study_area_mask_final_v01.tif`，要求“区内有效覆盖率 ≥ 99.9%”“区外全为 NoData”，且 B 的 `validate_flood_rasters` 无问题项。
+
 ## 11. 需要成员B回复的三件事
 
 1. 参考网格能否先给（哪怕全 NoData），最晚何时；
@@ -267,3 +273,4 @@ A 逐项确认 10.1 全部条目，并额外检查三张 A 侧输出与参考网
 |---|---|---|---|
 | 2026-11-28 | v01 | 首次冻结：命名对齐交付清单、SAR 分位映射、NoData 与空网格方案 | 成员A |
 | 2026-11-28 | v02 | 增补交付渠道分工（3.1–3.5）、一分钟版、B 侧执行步骤与三条禁令、验收自查与复验；`hengzhou_grid_1km.json` 由 P1 提为 P0 | 成员A |
+| 2026-11-29 | v03 | 同步 B 已冻结口径：有效范围 = `study_area_mask == 1`、`grid_id` 固定 `G000001`–`G003690` 及逐格冻结窗口、研究区基准像元数；交付清单补 `study_area_mask`/边界/GPKG；P1 改为 Git LFS 入库；复验增加 `--study-mask` 口径 | 成员A |

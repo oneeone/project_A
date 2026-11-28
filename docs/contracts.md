@@ -6,7 +6,11 @@
 
 必须包含（带状态与版本后缀）：
 
-- hengzhou_reference_grid_final_v01.tif
+- hengzhou_reference_grid_final_v01.tif（整幅全 NoData，**只定义空间几何**）
+- study_area_mask_final_v01.tif（`1`=研究区，`0`=区外，`255`=NoData）
+- hengzhou_boundary_final_v01.geojson
+- hengzhou_grid_1km_final_v01.gpkg（`grid_id` 固定 `G000001`–`G003690`，含逐格像素窗口）
+- hengzhou_grid_1km.json
 - hengzhou_stack_final_v01.tif
 - permanent_water_final_v01.tif
 - hengzhou_input_metadata.json
@@ -14,8 +18,10 @@
 要求：
 
 - 所有栅格具有相同CRS（EPSG:32649）、Transform、Width和Height，分辨率10 m。
+- **研究区有效范围必须读 `study_area_mask == 1`**（2026-11-28 B 侧冻结）：参考栅格整幅 -9999 不得当作掩膜；A 侧口径 `valid = 影像栈有效 ∩ study_area_mask == 1`，掩膜外一律 NoData。
 - input_metadata说明通道顺序、数值标度、日期、轨道、极化和预处理。
 - 影像栈固定6波段，第6波段为原始dB备份；NoData用-9999，不得用0填充。
+- 大体积 tif 可走 Git LFS（B 已用 `.gitattributes` 跟踪 `data/processed/*.tif`），也可走共享目录；无论哪种渠道，SHA-256 必须与 B 交付文档一致。
 
 ## 2. A交付B：淹没识别结果
 
