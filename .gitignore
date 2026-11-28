@@ -25,6 +25,8 @@ data/mock/*
 *.dbf
 *.prj
 *.gpkg
+!data/processed/hengzhou_stack_final_v01.tif
+!data/processed/permanent_water_final_v01.tif
 
 # Models and arrays
 *.pt
