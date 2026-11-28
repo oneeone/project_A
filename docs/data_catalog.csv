@@ -3,8 +3,8 @@ provided_optical_v01,灾前光学影像,APMCM组委会附件,,题面提供,2026-
 provided_sar_v01,灾后GF-3 HH影像,APMCM组委会附件,,题面提供,2026-11-27,约8.66 m,EPSG:4326,样本1001-2000,成员B,原始ZIP完整性和编号审计,竞赛附件限赛题使用,available_local
 provided_label_v01,新增淹没标签,APMCM组委会附件,,题面提供,2026-11-27,约8.66 m,WGS 84,样本1001-2000,成员B,原始ZIP完整性和编号审计,竞赛附件限赛题使用,available_local
 hengzhou_boundary_v01,横州市行政边界,OpenStreetMap,https://www.openstreetmap.org/relation/2775762,OSM relation 2775762 snapshot,2026-11-28,vector,EPSG:4326,广西南宁市横州市,成员B,拓扑修复并投影到EPSG:32649,ODbL 1.0,available_local
-sentinel1_pre_v01,灾前Sentinel-1同轨影像,Copernicus Data Space,https://dataspace.copernicus.eu/,,待下载,10 m,待处理,横州市,成员B,轨道筛选-热噪声去除-辐射定标-斑点抑制-地形校正,ESA Copernicus,planned
-sentinel1_event_v01,灾期Sentinel-1同轨影像,Copernicus Data Space,https://dataspace.copernicus.eu/,,待下载,10 m,待处理,横州市,成员B,与灾前影像同轨同极化并配准,ESA Copernicus,planned
-sentinel2_pre_v01,灾前Sentinel-2 L2A影像,Copernicus Data Space,https://dataspace.copernicus.eu/,,待下载,10 m,待处理,横州市,成员B,云掩膜-波段重采样-裁剪,ESA Copernicus,planned
+sentinel1_pre_v01,灾前Sentinel-1同轨影像,Planetary Computer,https://planetarycomputer.microsoft.com/dataset/sentinel-1-rtc,2026-06-27,2026-11-28,10 m,EPSG:32649,横州市,成员B,升轨相对轨道157和VV极化筛选；两景RTC产品记录于metadata,ESA Copernicus,selected_remote
+sentinel1_event_v01,灾期Sentinel-1同轨影像,Planetary Computer,https://planetarycomputer.microsoft.com/dataset/sentinel-1-rtc,2026-07-04,2026-11-28,10 m,EPSG:32649,横州市,成员B,两景RTC拼接；gamma0转dB；1%和99%分位拉伸,ESA Copernicus,processed_final
+sentinel2_pre_v01,灾前Sentinel-2 L2A影像,Planetary Computer,https://planetarycomputer.microsoft.com/dataset/sentinel-2-l2a,2026-06-03;2026-05-26;2026-05-14;2026-04-09;2026-01-14,2026-11-28,10 m,EPSG:32649,横州市,成员B,B04/B03/B02/B08时序合成；SCL云掩膜；8像元保持NoData,ESA Copernicus,processed_final
 copernicus_dem_v01,Copernicus DEM GLO-30,Copernicus Data Space,https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM,,待下载,30 m,待处理,横州市,成员B,双线性重采样至参考栅格,依数据源,planned
-jrc_water_v01,JRC Global Surface Water,Copernicus Data Space,https://global-surface-water.appspot.com/download,,待下载,30 m,EPSG:4326,横州市,成员B,occurrence阈值生成永久水体并最近邻重采样,Copernicus Programme,planned
+jrc_water_v01,JRC Global Surface Water,Planetary Computer,https://planetarycomputer.microsoft.com/dataset/jrc-gsw,2020-07-01,2026-11-28,30 m,EPSG:4326,横州市,成员B,产品100E_30Nv1_3_2020；occurrence大于等于90%；最近邻重采样,Copernicus Programme,processed_final

@@ -6,10 +6,30 @@ from pathlib import Path
 from src.member_b.preprocess import (
     create_assessment_grid_json,
     create_empty_reference_grid,
+    optical_reflectance_to_uint8,
+    percentile_stretch_uint8,
+    sar_gamma0_to_db,
 )
 
 
 class MemberBP0Tests(unittest.TestCase):
+    def test_input_scaling_helpers_preserve_nodata(self) -> None:
+        import numpy as np
+
+        gamma0 = np.array([1.0, 0.01, 0.0, -9999.0], dtype=np.float32)
+        db = sar_gamma0_to_db(gamma0)
+        np.testing.assert_allclose(db[:2], [0.0, -20.0], atol=1e-5)
+        self.assertEqual(db[2], -9999.0)
+        stretched = percentile_stretch_uint8(db, -20.0, 0.0)
+        np.testing.assert_allclose(stretched[:2], [255.0, 0.0])
+        self.assertEqual(stretched[2], -9999.0)
+
+        optical = optical_reflectance_to_uint8(
+            np.array([10000.0, 5000.0, 0.0], dtype=np.float32)
+        )
+        np.testing.assert_allclose(optical[:2], [255.0, 128.0])
+        self.assertEqual(optical[2], -9999.0)
+
     def test_empty_reference_and_continuous_one_km_grid(self) -> None:
         try:
             import rasterio

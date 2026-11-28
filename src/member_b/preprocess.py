@@ -378,6 +378,60 @@ def build_input_stack(
                     destination.set_band_description(index, name)
 
 
+def sar_gamma0_to_db(
+    gamma0: object,
+    *,
+    nodata: float = -9999.0,
+) -> object:
+    """Convert positive linear gamma-nought backscatter to decibels."""
+
+    import numpy as np
+
+    values = np.asarray(gamma0, dtype=np.float32)
+    output = np.full(values.shape, nodata, dtype=np.float32)
+    valid = np.isfinite(values) & (values > 0)
+    output[valid] = 10.0 * np.log10(values[valid])
+    return output
+
+
+def percentile_stretch_uint8(
+    values: object,
+    p1: float,
+    p99: float,
+    *,
+    nodata: float = -9999.0,
+) -> object:
+    """Map valid values linearly to 0..255 and preserve NoData as float."""
+
+    import numpy as np
+
+    if not np.isfinite(p1) or not np.isfinite(p99) or p99 <= p1:
+        raise ValueError("p1 and p99 must be finite and satisfy p99 > p1")
+    source = np.asarray(values, dtype=np.float32)
+    output = np.full(source.shape, nodata, dtype=np.float32)
+    valid = np.isfinite(source) & (source != nodata)
+    scaled = np.rint((source[valid] - p1) / (p99 - p1) * 255.0)
+    output[valid] = np.clip(scaled, 0, 255)
+    return output
+
+
+def optical_reflectance_to_uint8(
+    reflectance: object,
+    *,
+    nodata: float = -9999.0,
+) -> object:
+    """Scale Sentinel-2 L2A reflectance units 0..10000 to 8-bit values."""
+
+    import numpy as np
+
+    source = np.asarray(reflectance, dtype=np.float32)
+    output = np.full(source.shape, nodata, dtype=np.float32)
+    valid = np.isfinite(source) & (source > 0)
+    scaled = np.rint(source[valid] / 10000.0 * 255.0)
+    output[valid] = np.clip(scaled, 0, 255)
+    return output
+
+
 def write_input_metadata(
     output_path: str | Path,
     *,

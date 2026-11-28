@@ -6,6 +6,7 @@
 |---|---|---|---|---|---|---|---|
 | 2026-11-27 | 成员B | 洪灾强度方法与标签 | jenks_or_clustering；英文内部标签 | Jenks自然断点；一般、较强、强、极强 | 与题面四级定义和可复现阈值输出统一 | 问题2、问题3、B到C评估网格 | 正式洪水结果到达后重算 |
 | 2026-11-28 | 成员B | 横州参考栅格与1 km网格 | 未冻结 | `hengzhou_reference_grid_final_v01`；`hengzhou_grid_1km` | 按成员A交接一 v02 冻结 P0 几何合同；边界采用 OSM relation 2775762 | A侧横州推理框架、B/C评估网格 | 否；如边界变更须升为v02并通知A重跑 |
+| 2026-11-28 | 成员B | 横州影像栈与永久水体 | P0字段为pending | `hengzhou_stack_final_v01`；`permanent_water_final_v01` | 完成同轨S1 RTC、S2无云时序合成与JRC occurrence阈值处理 | A侧横州推理与永久水体排除 | 是；A须使用本次P1 final文件运行正式推理 |
 
 ## 变更原则
 
