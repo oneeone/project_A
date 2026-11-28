@@ -2,17 +2,20 @@
 
 ## 1. B交付A：横州市模型输入
 
-必须包含：
+完整规格见 `docs/handoff1_b_to_a_input_spec.md`（文件名、波段顺序、数值标度、NoData、空网格方案以该文件为准）。
 
-- hengzhou_reference_grid.tif
-- hengzhou_input_stack.tif
-- permanent_water.tif
-- input_metadata.json
+必须包含（带状态与版本后缀）：
+
+- hengzhou_reference_grid_final_v01.tif
+- hengzhou_stack_final_v01.tif
+- permanent_water_final_v01.tif
+- hengzhou_input_metadata.json
 
 要求：
 
-- 所有栅格具有相同CRS、Transform、Width和Height。
-- input_metadata说明通道顺序、日期、轨道、极化和预处理。
+- 所有栅格具有相同CRS（EPSG:32649）、Transform、Width和Height，分辨率10 m。
+- input_metadata说明通道顺序、数值标度、日期、轨道、极化和预处理。
+- 影像栈固定6波段，第6波段为原始dB备份；NoData用-9999，不得用0填充。
 
 ## 2. A交付B：淹没识别结果
 

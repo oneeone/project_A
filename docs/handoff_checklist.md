@@ -32,10 +32,12 @@
 
 ### 交接一：B到A
 
-- hengzhou_reference_grid
-- hengzhou_input_stack
-- permanent_water
-- input_metadata
+规格见 `docs/handoff1_b_to_a_input_spec.md`。
+
+- hengzhou_reference_grid_final_v01.tif
+- hengzhou_stack_final_v01.tif（6波段，第6波段为原始dB）
+- permanent_water_final_v01.tif
+- hengzhou_input_metadata.json
 
 ### 交接二：A到B
 
