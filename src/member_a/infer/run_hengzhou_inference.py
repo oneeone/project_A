@@ -411,8 +411,11 @@ def main() -> int:
 
     meta = build_meta(args, payload, prob, mask, unc, valid, in_meta)
     if band6 is not None:
-        meta["diagnostics"] = {"stack_band6_db_min": round(float(band6.min()), 2),
-                               "stack_band6_db_max": round(float(band6.max()), 2)}
+        b6 = band6[valid & (band6 != NODATA_F)]
+        if b6.size:
+            meta["diagnostics"] = {"stack_band6_db_min": round(float(b6.min()), 2),
+                                   "stack_band6_db_max": round(float(b6.max()), 2),
+                                   "stack_band6_valid_pixels": int(b6.size)}
     meta_path = out_dir / f"hengzhou_flood_model_metadata_{args.status}_{args.version}.json"
     meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
 
