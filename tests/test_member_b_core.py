@@ -83,18 +83,64 @@ class IntensityAndGridTests(unittest.TestCase):
         )
         mask = (probability >= 0.5).astype(np.uint8)
         uncertainty = np.full((4, 4), 0.1)
+        grid_cells = [
+            {
+                "grid_id": f"G{index + 1:06d}",
+                "center_x": float(column * 1000 + 500),
+                "center_y": float(row * 1000 + 500),
+                "grid_area_km2": 1.0,
+                "row_start": row * 2,
+                "row_stop": row * 2 + 2,
+                "column_start": column * 2,
+                "column_stop": column * 2 + 2,
+            }
+            for index, (row, column) in enumerate(
+                [(0, 0), (0, 1), (1, 0), (1, 1)]
+            )
+        ]
         result = aggregate_assessment_grid(
             probability,
             mask,
             uncertainty,
             pixel_size_m=500.0,
             grid_size_m=1000.0,
+            grid_cells=grid_cells,
             data_status="mock",
         )
         self.assertEqual(len(result.table), 4)
+        self.assertEqual(
+            result.table["grid_id"].tolist(),
+            ["G000001", "G000002", "G000003", "G000004"],
+        )
         self.assertFalse(result.table["grid_id"].duplicated().any())
         self.assertTrue(result.table["intensity_score"].between(0, 1).all())
         self.assertTrue(result.table["intensity_confidence"].between(0, 1).all())
+
+        invalid_grid = [dict(cell) for cell in grid_cells]
+        invalid_grid[0]["grid_id"] = "G0000_0000"
+        with self.assertRaisesRegex(ValueError, "continuous G000001"):
+            aggregate_assessment_grid(
+                probability,
+                mask,
+                uncertainty,
+                pixel_size_m=500.0,
+                grid_size_m=1000.0,
+                grid_cells=invalid_grid,
+                data_status="mock",
+            )
+
+        invalid_area_grid = [dict(cell) for cell in grid_cells]
+        invalid_area_grid[0]["grid_area_km2"] = 0.0
+        with self.assertRaisesRegex(ValueError, "must be positive"):
+            aggregate_assessment_grid(
+                probability,
+                mask,
+                uncertainty,
+                pixel_size_m=500.0,
+                grid_size_m=1000.0,
+                grid_cells=invalid_area_grid,
+                data_status="mock",
+            )
 
     def test_threshold_classification_order(self) -> None:
         scores = np.array([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])

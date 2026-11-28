@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 import pandas as pd
 
@@ -45,6 +45,7 @@ def write_assessment_outputs(
     csv_path: str | Path,
     gpkg_path: str | Path,
     layer: str = "assessment_grid",
+    geometry_by_grid_id: Mapping[str, object] | None = None,
 ) -> None:
     """Write the authoritative GPKG and matching contract CSV."""
 
@@ -59,22 +60,37 @@ def write_assessment_outputs(
     except ImportError as exc:
         raise RuntimeError("geopandas and shapely are required to write GPKG output") from exc
 
-    geometries = []
-    for _, row in table.iterrows():
-        row_start = float(row["_row_start"])
-        row_stop = float(row["_row_stop"])
-        column_start = float(row["_column_start"])
-        column_stop = float(row["_column_stop"])
-        geometries.append(
-            Polygon(
-                [
-                    _pixel_corner(transform, row_start, column_start),
-                    _pixel_corner(transform, row_start, column_stop),
-                    _pixel_corner(transform, row_stop, column_stop),
-                    _pixel_corner(transform, row_stop, column_start),
-                ]
+    if geometry_by_grid_id is not None:
+        missing_geometry = [
+            str(grid_id)
+            for grid_id in table["grid_id"]
+            if str(grid_id) not in geometry_by_grid_id
+        ]
+        if missing_geometry:
+            raise ValueError(
+                f"frozen grid geometry is missing IDs: {missing_geometry[:5]}"
             )
-        )
+        geometries = [
+            geometry_by_grid_id[str(grid_id)]
+            for grid_id in table["grid_id"]
+        ]
+    else:
+        geometries = []
+        for _, row in table.iterrows():
+            row_start = float(row["_row_start"])
+            row_stop = float(row["_row_stop"])
+            column_start = float(row["_column_start"])
+            column_stop = float(row["_column_stop"])
+            geometries.append(
+                Polygon(
+                    [
+                        _pixel_corner(transform, row_start, column_start),
+                        _pixel_corner(transform, row_start, column_stop),
+                        _pixel_corner(transform, row_stop, column_stop),
+                        _pixel_corner(transform, row_stop, column_start),
+                    ]
+                )
+            )
 
     public_table = table.drop(columns=sorted(INTERNAL_COLUMNS))
     csv_output = Path(csv_path)

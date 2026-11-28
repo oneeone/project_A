@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 import urllib.parse
 import urllib.request
@@ -18,6 +19,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.member_b.preprocess import (  # noqa: E402
     create_assessment_grid_json,
     create_empty_reference_grid,
+    create_reference_grid,
 )
 
 
@@ -146,13 +148,19 @@ def write_metadata(
 
 def verify_outputs(
     reference_path: Path,
+    study_mask_path: Path,
     grid_path: Path,
+    grid_gpkg_path: Path,
     metadata_path: Path,
 ) -> dict[str, object]:
+    import geopandas as gpd
     import numpy as np
     import rasterio
 
-    with rasterio.open(reference_path) as reference:
+    with (
+        rasterio.open(reference_path) as reference,
+        rasterio.open(study_mask_path) as study_mask,
+    ):
         transform = [
             float(reference.transform.a),
             float(reference.transform.b),
@@ -175,6 +183,27 @@ def verify_outputs(
                 raise ValueError("reference contains a non-NoData pixel")
         width = reference.width
         height = reference.height
+        reference_signature = (
+            reference.crs,
+            reference.transform,
+            reference.width,
+            reference.height,
+        )
+        study_signature = (
+            study_mask.crs,
+            study_mask.transform,
+            study_mask.width,
+            study_mask.height,
+        )
+        if study_signature != reference_signature:
+            raise ValueError("study mask spatial signature differs from reference")
+        if study_mask.dtypes[0] != "uint8" or study_mask.nodata != 255:
+            raise ValueError("study mask must be uint8 with NoData 255")
+        study_values = set(np.unique(study_mask.read(1)).tolist())
+        if not study_values.issubset({0, 1, 255}) or 1 not in study_values:
+            raise ValueError(
+                f"study mask values must include 1 within 0/1/255: {study_values}"
+            )
 
     grid = json.loads(grid_path.read_text(encoding="utf-8"))
     cells = grid["cells"]
@@ -184,6 +213,28 @@ def verify_outputs(
         raise ValueError("grid_id values are not continuous in row-major order")
     if grid["px_per_cell"] != 100:
         raise ValueError("1 km grid must use 100 pixels per cell")
+    required_cell_fields = {
+        "grid_id",
+        "sequence",
+        "center_x",
+        "center_y",
+        "grid_area_km2",
+        "row_start",
+        "row_stop",
+        "column_start",
+        "column_stop",
+    }
+    for cell in cells:
+        if required_cell_fields - set(cell):
+            raise ValueError("grid JSON lacks frozen pixel-window fields")
+
+    grid_gpkg = gpd.read_file(grid_gpkg_path).sort_values("sequence")
+    if grid_gpkg["grid_id"].astype(str).tolist() != identifiers:
+        raise ValueError("GPKG grid IDs differ from frozen grid JSON")
+    if str(grid_gpkg.crs) != "EPSG:32649":
+        raise ValueError(f"unexpected grid GPKG CRS: {grid_gpkg.crs}")
+    if len(grid_gpkg) != len(cells):
+        raise ValueError("GPKG and JSON grid cell counts differ")
 
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     if metadata["transform"] != transform:
@@ -209,6 +260,12 @@ def verify_outputs(
             "cell_count": len(cells),
             "unique_grid_ids": len(set(identifiers)) == len(identifiers),
             "continuous_grid_ids": identifiers == expected,
+            "gpkg_matches_json": True,
+        },
+        "study_mask": {
+            "values": sorted(study_values),
+            "contains_hengzhou_pixels": 1 in study_values,
+            "spatial_signature_matches_reference": True,
         },
         "metadata_matches_reference": True,
         "band_contract_confirmed": True,
@@ -234,9 +291,33 @@ def parse_arguments() -> argparse.Namespace:
         / "hengzhou_reference_grid_final_v01.tif",
     )
     parser.add_argument(
+        "--formal-boundary",
+        type=Path,
+        default=PROJECT_ROOT
+        / "data"
+        / "external"
+        / "hengzhou_boundary_final_v01.geojson",
+    )
+    parser.add_argument(
+        "--study-mask",
+        type=Path,
+        default=PROJECT_ROOT
+        / "data"
+        / "processed"
+        / "study_area_mask_final_v01.tif",
+    )
+    parser.add_argument(
         "--grid-json",
         type=Path,
         default=PROJECT_ROOT / "outputs" / "tables" / "hengzhou_grid_1km.json",
+    )
+    parser.add_argument(
+        "--grid-gpkg",
+        type=Path,
+        default=PROJECT_ROOT
+        / "data"
+        / "processed"
+        / "hengzhou_grid_1km_final_v01.gpkg",
     )
     parser.add_argument(
         "--metadata",
@@ -263,6 +344,14 @@ def parse_arguments() -> argparse.Namespace:
         / "hengzhou_p0_verification_final_v01.json",
     )
     parser.add_argument(
+        "--spatial-contract-zip",
+        type=Path,
+        default=PROJECT_ROOT
+        / "outputs"
+        / "samples"
+        / "hengzhou_spatial_contract_final_v01.zip",
+    )
+    parser.add_argument(
         "--refresh-boundary",
         action="store_true",
         help="Fetch OSM relation 2775762 even if the local boundary exists.",
@@ -274,16 +363,25 @@ def main() -> None:
     arguments = parse_arguments()
     if arguments.refresh_boundary or not arguments.boundary.exists():
         fetch_osm_boundary(arguments.boundary)
+    arguments.formal_boundary.parent.mkdir(parents=True, exist_ok=True)
+    if arguments.boundary.resolve() != arguments.formal_boundary.resolve():
+        shutil.copyfile(arguments.boundary, arguments.formal_boundary)
     grid_info = create_empty_reference_grid(
-        arguments.boundary,
+        arguments.formal_boundary,
         arguments.reference,
+    )
+    create_reference_grid(
+        arguments.formal_boundary,
+        arguments.study_mask,
     )
     create_assessment_grid_json(
-        arguments.boundary,
+        arguments.formal_boundary,
         arguments.reference,
         arguments.grid_json,
+        grid_gpkg_path=arguments.grid_gpkg,
     )
-    write_metadata(arguments.metadata, grid_info)
+    if not arguments.metadata.exists():
+        write_metadata(arguments.metadata, grid_info)
 
     arguments.zip.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(
@@ -296,7 +394,9 @@ def main() -> None:
 
     verification = verify_outputs(
         arguments.reference,
+        arguments.study_mask,
         arguments.grid_json,
+        arguments.grid_gpkg,
         arguments.metadata,
     )
     verification["source_boundary"] = {
@@ -305,6 +405,26 @@ def main() -> None:
         "license": "ODbL 1.0",
     }
     verification["zip_file"] = arguments.zip.name
+    arguments.spatial_contract_zip.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    with zipfile.ZipFile(
+        arguments.spatial_contract_zip,
+        "w",
+        compression=zipfile.ZIP_DEFLATED,
+        compresslevel=9,
+    ) as archive:
+        for path in (
+            arguments.formal_boundary,
+            arguments.study_mask,
+            arguments.grid_gpkg,
+            arguments.grid_json,
+        ):
+            archive.write(path, arcname=path.name)
+    verification["spatial_contract_zip"] = (
+        arguments.spatial_contract_zip.name
+    )
     arguments.verification.parent.mkdir(parents=True, exist_ok=True)
     with arguments.verification.open(
         "w",

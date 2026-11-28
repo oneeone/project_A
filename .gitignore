@@ -44,6 +44,7 @@ data/mock/*
 *.gz
 !outputs/samples/
 !outputs/samples/hengzhou_reference_grid_final_v01.zip
+!outputs/samples/hengzhou_spatial_contract_final_v01.zip
 
 # Python
 __pycache__/

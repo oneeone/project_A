@@ -22,13 +22,16 @@ Sentinel-1/2的具体产品ID、日期、轨道、极化、云量和处理软件
 
 ## 3. 空间冻结
 
-- 目标投影暂定`EPSG:32649`，必须在边界到达后验证。
+- 目标投影固定为`EPSG:32649`。
 - 参考分辨率10 m。
 - 参考范围按边界外包矩形向10 m网格向外取整。
 - 连续变量使用双线性插值。
 - 分类变量和掩膜使用最近邻插值。
 - 浮点NoData为`-9999`，掩膜NoData为`255`。
 - 1 km单元与10 m参考栅格同原点，每边100个像素。
+- 全`-9999`的参考栅格仅用于空间几何合同，不能作为研究区有效掩膜。
+- 正式研究区掩膜为`study_area_mask_final_v01.tif`，横州市内像元值为1。
+- 正式1 km网格为`hengzhou_grid_1km_final_v01.gpkg`，编号固定为`G000001`至`G003690`。
 
 参考网格一旦交付A成员，不得静默修改。
 
@@ -66,13 +69,27 @@ I = 0.5 * robust_scale(flood_area_km2)
 ## 7. 交付前检查
 
 - 三个A输出栅格与参考栅格的CRS、Transform、Width和Height完全一致。
+- 研究区掩膜与参考栅格空间签名一致，类型为uint8，值域只含0、1、255，且存在值为1的像元。
 - probability为float32且有效值在0至1。
 - mask为uint8且仅有0、1、255。
 - uncertainty非负，定义与`model_metadata.json`一致。
-- `grid_id`唯一，CSV和GPKG字段一致。
+- `grid_id`唯一且严格连续为`G000001`至`G003690`，JSON、CSV和GPKG一致。
 - 文件名含状态和版本，final文件不覆盖。
 - 所有数据源、阈值和处理版本写入元数据。
 
-## 8. 尚未完成的外部依赖
+## 8. 当前外部依赖状态
 
-当前尚未取得横州市正式边界、同轨Sentinel-1灾前/灾中影像、灾前Sentinel-2、DEM和JRC裁剪结果。因此参考栅格、横州输入栈、正式永久水体和实际面积数值不能冻结。
+横州市边界、参考栅格、研究区掩膜、1 km网格、灾前光学合成、灾期SAR和JRC永久水体均已冻结为v01。正式面积和强度结果仅等待成员A按冻结空间合同交付三个模型输出栅格。
+
+正式评估命令必须显式提供研究区掩膜和冻结网格：
+
+```powershell
+python scripts/run_member_b_assessment.py `
+  --reference data/processed/hengzhou_reference_grid_final_v01.tif `
+  --study-mask data/processed/study_area_mask_final_v01.tif `
+  --assessment-grid data/processed/hengzhou_grid_1km_final_v01.gpkg `
+  --probability <flood_probability.tif> `
+  --mask <flood_mask.tif> `
+  --uncertainty <uncertainty.tif> `
+  --output-dir outputs
+```

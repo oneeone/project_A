@@ -18,7 +18,16 @@
   "grid": {
     "cell_count": 3690,
     "unique_grid_ids": true,
-    "continuous_grid_ids": true
+    "continuous_grid_ids": true,
+    "gpkg_matches_json": true
+  },
+  "study_mask": {
+    "values": [
+      0,
+      1
+    ],
+    "contains_hengzhou_pixels": true,
+    "spatial_signature_matches_reference": true
   },
   "metadata_matches_reference": true,
   "band_contract_confirmed": true,
@@ -27,5 +36,6 @@
     "query_date": "2026-11-28",
     "license": "ODbL 1.0"
   },
-  "zip_file": "hengzhou_reference_grid_final_v01.zip"
+  "zip_file": "hengzhou_reference_grid_final_v01.zip",
+  "spatial_contract_zip": "hengzhou_spatial_contract_final_v01.zip"
 }

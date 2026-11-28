@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
@@ -44,6 +45,7 @@ def aggregate_assessment_grid(
     grid_size_m: float = 1000.0,
     transform: tuple[float, float, float, float, float, float] | None = None,
     valid_mask: np.ndarray | None = None,
+    grid_cells: Sequence[Mapping[str, object]] | None = None,
     data_status: str = "mock",
     area_weight: float = 0.5,
     ratio_weight: float = 0.5,
@@ -78,23 +80,85 @@ def aggregate_assessment_grid(
             raise ValueError("valid_mask must match raster arrays")
         valid &= supplied
 
-    rows: list[dict[str, object]] = []
     height, width = probability.shape
     pixel_area_km2 = pixel_size_m * pixel_size_m / 1_000_000.0
-    for grid_row, row_start in enumerate(range(0, height, cells_per_side)):
-        row_stop = min(row_start + cells_per_side, height)
-        for grid_column, column_start in enumerate(range(0, width, cells_per_side)):
-            column_stop = min(column_start + cells_per_side, width)
-            cell_valid = valid[row_start:row_stop, column_start:column_stop]
-            valid_count = int(cell_valid.sum())
-            if valid_count == 0:
-                continue
-            cell_mask = mask[row_start:row_stop, column_start:column_stop]
-            cell_probability = probability[row_start:row_stop, column_start:column_stop]
-            cell_uncertainty = sigma[row_start:row_stop, column_start:column_stop]
-            flooded_count = int(np.sum((cell_mask == 1) & cell_valid))
+
+    frozen = grid_cells is not None
+    if frozen:
+        cell_specs = list(grid_cells or [])
+        required = {
+            "grid_id",
+            "center_x",
+            "center_y",
+            "grid_area_km2",
+            "row_start",
+            "row_stop",
+            "column_start",
+            "column_stop",
+        }
+        for cell in cell_specs:
+            missing = required - set(cell)
+            if missing:
+                raise ValueError(
+                    f"frozen grid cell is missing fields: {sorted(missing)}"
+                )
+        identifiers = [str(cell["grid_id"]) for cell in cell_specs]
+        expected = [
+            f"G{index:06d}" for index in range(1, len(cell_specs) + 1)
+        ]
+        if identifiers != expected:
+            raise ValueError(
+                "frozen grid_id values must be continuous G000001 identifiers"
+            )
+        if any(float(cell["grid_area_km2"]) <= 0 for cell in cell_specs):
+            raise ValueError("frozen grid_area_km2 values must be positive")
+    else:
+        cell_specs = []
+        for row_start in range(0, height, cells_per_side):
+            row_stop = min(row_start + cells_per_side, height)
+            for column_start in range(0, width, cells_per_side):
+                column_stop = min(column_start + cells_per_side, width)
+                cell_specs.append(
+                    {
+                        "row_start": row_start,
+                        "row_stop": row_stop,
+                        "column_start": column_start,
+                        "column_stop": column_stop,
+                    }
+                )
+
+    rows: list[dict[str, object]] = []
+    for cell in cell_specs:
+        row_start = int(cell["row_start"])
+        row_stop = int(cell["row_stop"])
+        column_start = int(cell["column_start"])
+        column_stop = int(cell["column_stop"])
+        if not (
+            0 <= row_start < row_stop <= height
+            and 0 <= column_start < column_stop <= width
+        ):
+            raise ValueError("grid cell pixel bounds fall outside raster dimensions")
+
+        cell_valid = valid[row_start:row_stop, column_start:column_stop]
+        valid_count = int(cell_valid.sum())
+        if valid_count == 0:
+            if frozen:
+                raise ValueError(
+                    f"frozen grid {cell['grid_id']} contains no valid model pixels"
+                )
+            continue
+        cell_mask = mask[row_start:row_stop, column_start:column_stop]
+        cell_probability = probability[row_start:row_stop, column_start:column_stop]
+        cell_uncertainty = sigma[row_start:row_stop, column_start:column_stop]
+        flooded_count = int(np.sum((cell_mask == 1) & cell_valid))
+        if frozen:
+            grid_id = str(cell["grid_id"])
+            center_x = float(cell["center_x"])
+            center_y = float(cell["center_y"])
+            grid_area_km2 = float(cell["grid_area_km2"])
+        else:
+            grid_id = f"G{len(rows) + 1:06d}"
             grid_area_km2 = valid_count * pixel_area_km2
-            flood_area_km2 = flooded_count * pixel_area_km2
             center_row = (row_start + row_stop) / 2.0
             center_column = (column_start + column_stop) / 2.0
             if transform is None:
@@ -104,22 +168,23 @@ def aggregate_assessment_grid(
                 center_x, center_y = _center_from_transform(
                     transform, center_row, center_column
                 )
-            rows.append(
-                {
-                    "grid_id": f"G{grid_row:04d}_{grid_column:04d}",
-                    "center_x": center_x,
-                    "center_y": center_y,
-                    "grid_area_km2": grid_area_km2,
-                    "flood_area_km2": flood_area_km2,
-                    "flood_ratio": flood_area_km2 / grid_area_km2,
-                    "mean_flood_prob": float(cell_probability[cell_valid].mean()),
-                    "mean_uncertainty": float(cell_uncertainty[cell_valid].mean()),
-                    "_row_start": row_start,
-                    "_row_stop": row_stop,
-                    "_column_start": column_start,
-                    "_column_stop": column_stop,
-                }
-            )
+        flood_area_km2 = flooded_count * pixel_area_km2
+        rows.append(
+            {
+                "grid_id": grid_id,
+                "center_x": center_x,
+                "center_y": center_y,
+                "grid_area_km2": grid_area_km2,
+                "flood_area_km2": flood_area_km2,
+                "flood_ratio": flood_area_km2 / grid_area_km2,
+                "mean_flood_prob": float(cell_probability[cell_valid].mean()),
+                "mean_uncertainty": float(cell_uncertainty[cell_valid].mean()),
+                "_row_start": row_start,
+                "_row_stop": row_stop,
+                "_column_start": column_start,
+                "_column_stop": column_stop,
+            }
+        )
 
     if not rows:
         raise ValueError("assessment grid contains no valid cells")

@@ -4,15 +4,20 @@
 
 必须包含：
 
-- hengzhou_reference_grid.tif
-- hengzhou_input_stack.tif
-- permanent_water.tif
-- input_metadata.json
+- `hengzhou_boundary_final_v01.geojson`
+- `hengzhou_reference_grid_final_v01.tif`
+- `study_area_mask_final_v01.tif`
+- `hengzhou_grid_1km_final_v01.gpkg`
+- `hengzhou_stack_final_v01.tif`
+- `permanent_water_final_v01.tif`
+- `hengzhou_input_metadata.json`
 
 要求：
 
 - 所有栅格具有相同CRS、Transform、Width和Height。
 - input_metadata说明通道顺序、日期、轨道、极化和预处理。
+- 全`-9999`参考栅格仅定义空间几何；研究区有效范围必须读取`study_area_mask_final_v01.tif == 1`。
+- 1 km网格固定为3690格，`grid_id`按行优先连续编号为`G000001`至`G003690`。
 
 ## 2. A交付B：淹没识别结果
 
@@ -52,6 +57,8 @@
 ## 3. B交付C：正式评估网格
 
 权威空间文件为assessment_grid.gpkg，同时提供assessment_grid.csv。
+
+两者必须沿用冻结网格的几何与`grid_id`，不得在运行时重新生成`G0000_0000`形式的编号。
 
 必需字段：
 

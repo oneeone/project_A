@@ -185,16 +185,20 @@ def create_assessment_grid_json(
     reference_path: str | Path,
     output_path: str | Path,
     *,
+    grid_gpkg_path: str | Path | None = None,
     grid_size_m: float = 1000.0,
 ) -> dict[str, object]:
-    """Write the frozen 1 km cell table aligned to the 10 m reference origin."""
+    """Write the frozen 1 km cell table and optional authoritative GPKG."""
 
-    _, rasterio, features = _require_gis()
+    gpd, rasterio, features = _require_gis()
     import numpy as np
+    from shapely.geometry import box
 
     with rasterio.open(reference_path) as reference:
         if reference.crs is None:
             raise ValueError("reference grid has no CRS")
+        if reference.transform.b != 0 or reference.transform.d != 0:
+            raise ValueError("reference grid must be north-up")
         pixel_size_x = float(reference.transform.a)
         pixel_size_y = abs(float(reference.transform.e))
         if not math.isclose(pixel_size_x, pixel_size_y):
@@ -222,6 +226,7 @@ def create_assessment_grid_json(
 
     pixel_area_km2 = pixel_size_x * pixel_size_y / 1_000_000.0
     cells: list[dict[str, object]] = []
+    geometries = []
     next_id = 1
     for row_start in range(0, height, pixels_per_cell):
         row_stop = min(row_start + pixels_per_cell, height)
@@ -249,11 +254,21 @@ def create_assessment_grid_json(
             cells.append(
                 {
                     "grid_id": f"G{next_id:06d}",
+                    "sequence": next_id,
                     "center_x": round(float(center_x), 3),
                     "center_y": round(float(center_y), 3),
                     "grid_area_km2": round(valid_count * pixel_area_km2, 6),
+                    "row_start": int(row_start),
+                    "row_stop": int(row_stop),
+                    "column_start": int(column_start),
+                    "column_stop": int(column_stop),
                 }
             )
+            left = transform.c + transform.a * column_start
+            right = transform.c + transform.a * column_stop
+            top = transform.f + transform.e * row_start
+            bottom = transform.f + transform.e * row_stop
+            geometries.append(box(left, bottom, right, top))
             next_id += 1
 
     payload = {
@@ -285,6 +300,15 @@ def create_assessment_grid_json(
     ]
     with path.open("w", encoding="utf-8", newline="\n") as stream:
         stream.write("\n".join(header + cell_lines + ["  ]", "}"]) + "\n")
+    if grid_gpkg_path is not None:
+        gpkg_path = Path(grid_gpkg_path)
+        gpkg_path.parent.mkdir(parents=True, exist_ok=True)
+        geodata = gpd.GeoDataFrame(cells, geometry=geometries, crs=crs)
+        geodata.to_file(
+            gpkg_path,
+            layer="hengzhou_grid_1km",
+            driver="GPKG",
+        )
     return payload
 
 
