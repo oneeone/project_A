@@ -1,0 +1,66 @@
+{
+  "crs": "EPSG:32649",
+  "resolution_m": 10.0,
+  "transform": [
+    10.0,
+    0.0,
+    273290.0,
+    0.0,
+    -10.0,
+    2559770.0
+  ],
+  "width": 8477,
+  "height": 7199,
+  "nodata": {
+    "float": -9999,
+    "mask": 255
+  },
+  "band_order": [
+    "after_sar_uint8",
+    "before_red",
+    "before_green",
+    "before_blue",
+    "before_nir",
+    "after_sar_db"
+  ],
+  "input_scaling": {
+    "sar_db_percentiles": [
+      "pending",
+      "pending"
+    ],
+    "sar_uint8_formula": "clip(round((dB - p1) / (p99 - p1) * 255), 0, 255)",
+    "optical": {
+      "gain": 0.0255,
+      "offset": 0
+    }
+  },
+  "source_image_dates": {
+    "sar_before": "pending",
+    "sar_after": "pending",
+    "optical_before": "pending"
+  },
+  "permanent_water_threshold": "pending",
+  "grid_1km": {
+    "origin_m": [
+      273290.0,
+      2559770.0
+    ],
+    "px_per_cell": 100
+  },
+  "provenance": {
+    "sar_product_id": "pending",
+    "optical_product_id": "pending",
+    "orbit_direction": "pending",
+    "relative_orbit": "pending",
+    "polarization": "pending"
+  },
+  "boundary_provenance": {
+    "source": "OpenStreetMap",
+    "osm_type": "relation",
+    "osm_id": 2775762,
+    "query_date": "2026-11-28",
+    "license": "ODbL 1.0"
+  },
+  "data_status": "final",
+  "delivery_stage": "P0_geometry"
+}

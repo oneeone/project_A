@@ -2,7 +2,7 @@ data_id,name,source,url,acquisition_time,download_time,resolution,crs,coverage,p
 provided_optical_v01,灾前光学影像,APMCM组委会附件,,题面提供,2026-11-27,约8.66 m,EPSG:4326,样本1001-2000,成员B,原始ZIP完整性和编号审计,竞赛附件限赛题使用,available_local
 provided_sar_v01,灾后GF-3 HH影像,APMCM组委会附件,,题面提供,2026-11-27,约8.66 m,EPSG:4326,样本1001-2000,成员B,原始ZIP完整性和编号审计,竞赛附件限赛题使用,available_local
 provided_label_v01,新增淹没标签,APMCM组委会附件,,题面提供,2026-11-27,约8.66 m,WGS 84,样本1001-2000,成员B,原始ZIP完整性和编号审计,竞赛附件限赛题使用,available_local
-hengzhou_boundary_v01,横州市行政边界,待从权威行政区或OpenStreetMap获取,,待确认,,vector,待核实,广西横州市,成员B,拓扑修复并投影到EPSG:32649,依数据源,planned
+hengzhou_boundary_v01,横州市行政边界,OpenStreetMap,https://www.openstreetmap.org/relation/2775762,OSM relation 2775762 snapshot,2026-11-28,vector,EPSG:4326,广西南宁市横州市,成员B,拓扑修复并投影到EPSG:32649,ODbL 1.0,available_local
 sentinel1_pre_v01,灾前Sentinel-1同轨影像,Copernicus Data Space,https://dataspace.copernicus.eu/,,待下载,10 m,待处理,横州市,成员B,轨道筛选-热噪声去除-辐射定标-斑点抑制-地形校正,ESA Copernicus,planned
 sentinel1_event_v01,灾期Sentinel-1同轨影像,Copernicus Data Space,https://dataspace.copernicus.eu/,,待下载,10 m,待处理,横州市,成员B,与灾前影像同轨同极化并配准,ESA Copernicus,planned
 sentinel2_pre_v01,灾前Sentinel-2 L2A影像,Copernicus Data Space,https://dataspace.copernicus.eu/,,待下载,10 m,待处理,横州市,成员B,云掩膜-波段重采样-裁剪,ESA Copernicus,planned

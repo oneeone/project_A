@@ -1,0 +1,31 @@
+{
+  "reference": {
+    "crs": "EPSG:32649",
+    "resolution_m": 10,
+    "transform": [
+      10.0,
+      0.0,
+      273290.0,
+      0.0,
+      -10.0,
+      2559770.0
+    ],
+    "width": 8477,
+    "height": 7199,
+    "nodata": -9999,
+    "all_nodata": true
+  },
+  "grid": {
+    "cell_count": 3690,
+    "unique_grid_ids": true,
+    "continuous_grid_ids": true
+  },
+  "metadata_matches_reference": true,
+  "band_contract_confirmed": true,
+  "source_boundary": {
+    "osm_relation_id": 2775762,
+    "query_date": "2026-11-28",
+    "license": "ODbL 1.0"
+  },
+  "zip_file": "hengzhou_reference_grid_final_v01.zip"
+}
