@@ -1,3 +1,31 @@
 \section{问题三：横州市洪灾应用}
 
-成员B负责。
+\subsection{研究区与空间基准}
+
+以广西横州市行政边界为研究区。边界到达后首先核实其经纬度范围是否完全位于UTM 49N，并据此确认暂定投影$\mathrm{EPSG:32649}$。以$10\,\mathrm{m}$为分辨率，将边界外包矩形向网格外侧取整，冻结参考栅格的坐标系、仿射变换、行列数和范围。连续变量采用双线性重采样，分类变量采用最近邻重采样。全部面积均在该投影平面上计算。
+
+\subsection{数据选择与预处理}
+
+灾前光学影像选择洪水事件前最近的低云Sentinel-2 L2A产品；SAR选择灾前与灾期同轨道方向、同相对轨道和同极化的Sentinel-1产品。SAR依次进行轨道校正、热噪声去除、辐射定标、斑点抑制和地形校正，光学影像进行云掩膜和统一分辨率处理。Copernicus DEM用于地形校正，JRC Global Surface Water用于构造永久水体掩膜。所有产品的日期、产品ID、轨道、极化、云量和处理版本记录在数据目录中。
+
+主办方训练集的SAR为GF-3 HH灰度影像，而横州应用使用Sentinel-1共极化数据，二者存在传感器和域差异；训练集第四光学通道的物理含义也未由官方明确说明。因此，横州输入栈的通道对应关系必须由成员A在推理前确认，并通过归一化、跨区域验证和不确定性结果评估域偏移影响。
+
+\subsection{水体变化与面积计算}
+
+记灾前总水体为$W_{\mathrm{before}}$，灾中总水体为$W_{\mathrm{during}}$，则新增淹没区、消退水体和净增加面积分别为
+\begin{align}
+ W_{\mathrm{new}}&=W_{\mathrm{during}}\setminus W_{\mathrm{before}},\\
+ W_{\mathrm{receded}}&=W_{\mathrm{before}}\setminus W_{\mathrm{during}},\\
+ \Delta A_{\mathrm{net}}&=A(W_{\mathrm{new}})-A(W_{\mathrm{receded}}).
+\end{align}
+区域新增淹没比例和有效陆地新增淹没比例定义为
+\begin{align}
+ p_{\mathrm{region}}&=\frac{A(W_{\mathrm{new}})}{A_{\mathrm{study}}},\\
+ p_{\mathrm{land}}&=\frac{A(W_{\mathrm{new}})}
+ {A_{\mathrm{study}}-A_{\mathrm{permanent\ water}}}.
+\end{align}
+若成员A仅交付新增淹没掩膜，则可以可靠计算新增面积和上述两个比例，但不能据此推断消退面积和净增加量；后两项必须由灾前、灾中总水体掩膜共同获得。
+
+\subsection{空间分布与交付}
+
+将像素结果汇总到$1\,\mathrm{km}$评估网格，输出每个网格的新增淹没面积、比例、平均淹没概率、平均不确定性、强度分数、强度等级和强度置信度。权威空间结果保存为GeoPackage，并提供同字段CSV、面积汇总JSON和强度阈值JSON。正式结果到达后应在本节补充：研究区总面积、永久水体面积、新增面积、消退面积、净增加面积、两种比例及四级强度空间分布图。

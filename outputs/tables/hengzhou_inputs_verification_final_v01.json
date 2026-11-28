@@ -1,0 +1,51 @@
+{
+  "spatial_signature_matches_reference": true,
+  "stack": {
+    "count": 6,
+    "dtype": "float32",
+    "nodata": -9999.0,
+    "band_descriptions": [
+      "after_sar_uint8",
+      "before_red",
+      "before_green",
+      "before_blue",
+      "before_nir",
+      "after_sar_db"
+    ],
+    "valid_ranges": [
+      [
+        0.0,
+        255.0
+      ],
+      [
+        10.0,
+        255.0
+      ],
+      [
+        0.0,
+        255.0
+      ],
+      [
+        0.0,
+        255.0
+      ],
+      [
+        21.0,
+        255.0
+      ],
+      [
+        -31.210927963256836,
+        38.4427490234375
+      ]
+    ]
+  },
+  "permanent_water": {
+    "dtype": "uint8",
+    "nodata": 255.0,
+    "allowed_values": [
+      0,
+      1,
+      255
+    ]
+  }
+}

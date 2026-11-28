@@ -25,6 +25,8 @@ data/mock/*
 *.dbf
 *.prj
 *.gpkg
+!data/processed/hengzhou_stack_final_v01.tif
+!data/processed/permanent_water_final_v01.tif
 
 # Models and arrays
 *.pt
@@ -42,6 +44,9 @@ data/mock/*
 *.rar
 *.tar
 *.gz
+!outputs/samples/
+!outputs/samples/hengzhou_reference_grid_final_v01.zip
+!outputs/samples/hengzhou_spatial_contract_final_v01.zip
 
 # Python
 __pycache__/
@@ -49,6 +54,7 @@ __pycache__/
 .venv/
 venv/
 env/
+.codex_deps/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/

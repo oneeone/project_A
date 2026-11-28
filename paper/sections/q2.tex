@@ -1,3 +1,44 @@
 \section{问题二：多源融合与洪灾强度}
 
-成员A负责融合模型，成员B负责强度分类。
+成员A负责多源融合识别模型，本节在其输出的新增淹没概率、二值掩膜和像素不确定性基础上建立洪灾强度分级。
+
+\subsection{强度评价单元与指标}
+
+将研究区按与参考栅格同原点的$1\,\mathrm{km}\times1\,\mathrm{km}$规则网格划分。对第$i$个有效单元，记新增淹没面积为$A_i$，有效研究面积为$S_i$，则新增淹没比例为
+\begin{equation}
+ r_i=\frac{A_i}{S_i}.
+\end{equation}
+为兼顾绝对面积与局地覆盖程度，分别对$\{A_i\}$和$\{r_i\}$进行$5\%$至$95\%$分位截断的稳健极差标准化，得到$\widetilde A_i$与$\widetilde r_i$。洪灾强度分数定义为
+\begin{equation}
+ I_i=w_A\widetilde A_i+w_r\widetilde r_i,\qquad
+ w_A=w_r=0.5.
+\end{equation}
+该指标仅刻画洪水危险性，不纳入人口、建筑和道路暴露，因而与问题四的综合风险分数严格区分。
+
+\subsection{四级强度划分}
+
+在全部有效网格的$\{I_i\}$上采用Jenks自然断点法，使类内平方离差最小并使类间差异尽可能大。所得三个断点记为$b_1,b_2,b_3$，据此定义
+\begin{equation}
+ C_i=
+ \begin{cases}
+ \text{一般}, & I_i\le b_1,\\
+ \text{较强}, & b_1<I_i\le b_2,\\
+ \text{强}, & b_2<I_i\le b_3,\\
+ \text{极强}, & I_i>b_3.
+ \end{cases}
+\end{equation}
+断点不手工指定，而是随候选或正式结果一并保存，以保证复算和敏感性分析能够追溯。最终论文应报告$b_1,b_2,b_3$的正式数值及各等级面积占比。
+
+\subsection{识别误差与强度不确定性}
+
+设模型给出的像素淹没概率为$p_j$，像素面积为$a_j$，则单元期望淹没面积为
+\begin{equation}
+ \mathbb E(A_i)=\sum_{j\in i}p_ja_j.
+\end{equation}
+在像素独立的诊断假设下，其二项方差项为
+\begin{equation}
+ \mathrm{Var}(A_i)=\sum_{j\in i}p_j(1-p_j)a_j^2.
+\end{equation}
+若模型另给出像素概率标准差$\sigma_j$，则增加$\sum_j\sigma_j^2a_j^2$作为模型不确定性项。由于邻近像素通常存在空间相关，该解析区间可能偏窄，正式结果优先使用成员A的多模型集成样本进行蒙特卡洛传播。
+
+强度置信度由分数到最近分级阈值的标准化距离与$1-\widetilde u_i$的乘积给出，其中$\widetilde u_i$为单元平均不确定性的稳健归一化值。因此，位于等级边界附近或模型不确定性较高的网格会获得较低置信度，并在地图中单独标识。
