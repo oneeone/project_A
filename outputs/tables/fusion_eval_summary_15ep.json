@@ -1,0 +1,71 @@
+{
+ "seeds": [
+  2026,
+  2027,
+  2028
+ ],
+ "archs": [
+  "dual",
+  "early",
+  "optical",
+  "sar"
+ ],
+ "detail": {
+  "dual": {
+   "seeds": [
+    2026,
+    2027,
+    2028
+   ],
+   "encoder": "resnet18",
+   "threshold_val_iou": 0.44,
+   "val_iou": 0.8049,
+   "test_iou": 0.7865,
+   "test_f1": 0.8805,
+   "test_area_rel_err": 0.1092,
+   "threshold_area": 0.32,
+   "val_area_ratio": 0.9978
+  },
+  "early": {
+   "seeds": [
+    2026,
+    2027,
+    2028
+   ],
+   "encoder": "resnet18",
+   "threshold_val_iou": 0.4,
+   "val_iou": 0.8016,
+   "test_iou": 0.7883,
+   "test_f1": 0.8816,
+   "test_area_rel_err": 0.1103
+  },
+  "optical": {
+   "seeds": [
+    2026,
+    2027,
+    2028
+   ],
+   "encoder": "resnet18",
+   "threshold_val_iou": 0.54,
+   "val_iou": 0.5532,
+   "test_iou": 0.6309,
+   "test_f1": 0.7737,
+   "test_area_rel_err": -0.0907
+  },
+  "sar": {
+   "seeds": [
+    2026,
+    2027,
+    2028
+   ],
+   "encoder": "resnet18",
+   "threshold_val_iou": 0.56,
+   "val_iou": 0.542,
+   "test_iou": 0.6638,
+   "test_f1": 0.7979,
+   "test_area_rel_err": 0.2026
+  },
+  "prob_cache": "成员A产出\\04_栅格结果\\fusion_probs_v01"
+ },
+ "seconds": 29.2
+}
