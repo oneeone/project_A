@@ -85,21 +85,30 @@ def tile_starts(size: int, tile: int, stride: int) -> list[int]:
     return starts
 
 
-def make_synthetic_stack(ref_path: Path, out_path: Path) -> Path:
-    """在参考网格上造一份 6 波段假栈：横向河道 + 两处漫滩 + 斑点噪声。
+def make_synthetic_stack(ref_path: Path, out_path: Path,
+                         mask_path: Path | None = None) -> Path:
+    """在参考网格上造一份 6 波段假栈：横向河道 + 一块浸滩 + 斑点噪声。
 
+    映滩位置对准研究区像元中位数中心，洪水量级接近真实量级（约占研究区 5%）：
     整栈以 float32 存储（单一 GTiff 无法混合 dtype），前 5 波段数值仍为 0-255。
     """
-    from rasterio.transform import Affine
-
     with rasterio.open(ref_path) as ref:
         crs, transform, h, w = ref.crs, ref.transform, ref.height, ref.width
     rng = np.random.default_rng(2026)
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
 
+    inside = None
+    cy, cx = int(0.58 * h), int(0.62 * w)
+    if mask_path is not None and Path(mask_path).exists():
+        with rasterio.open(mask_path) as m:
+            if (m.height, m.width) == (h, w):
+                inside = m.read(1) == 1
+                ys, xs = np.nonzero(inside)
+                cy, cx = int(np.median(ys)), int(np.median(xs))
+
     river = np.exp(-((yy - (0.45 * h + 90 * np.sin(xx / 700.0))) ** 2) / (2 * 55.0 ** 2))
-    flood = (np.exp(-((xx - 0.62 * w) ** 2 - (yy - 0.58 * h) ** 2) / (2 * 900.0 ** 2)) > 0.35).astype(np.float32)
-    water = np.clip(river + 0.55 * flood, 0, 1)
+    blob = np.exp(-((xx - cx) ** 2 + (yy - cy) ** 2) / (2 * 420.0 ** 2))
+    water = np.clip(0.9 * river + 0.75 * (blob > 0.35).astype(np.float32), 0, 1)
 
     sar = 120.0 - 90.0 * water + rng.normal(0, 12, (h, w)).astype(np.float32)
     sar_u8 = np.clip(sar, 0, 255).astype(np.uint8)
@@ -112,13 +121,9 @@ def make_synthetic_stack(ref_path: Path, out_path: Path) -> Path:
     db = (20.0 * np.log10(np.maximum(sar, 1.0) / 255.0) - 6.0).astype(np.float32)
 
     stack = np.concatenate([sar_u8[None].astype(np.float32), rgb, db[None]], axis=0)
-    # 造 16 px 边缘 NoData 框与一个 100x100 内部空洞：用来走通 NoData -> (-9999 / 255) 分支，
-    # 占比 <1%，不影响校验器的覆盖率门槛
-    stack[:, :16, :] = NODATA_F
-    stack[:, -16:, :] = NODATA_F
-    stack[:, :, :16] = NODATA_F
-    stack[:, :, -16:] = NODATA_F
-    stack[:, h // 2:h // 2 + 100, w // 3:w // 3 + 100] = NODATA_F
+    # 研究区外保留 0-255 值（与 B 的真实栈一致），有效性完全靠掩膜判；
+    # 只研究区中心戳一个 100x100 缺测洞，用来测 NoData -> (-9999 / 255) 分支
+    stack[:, cy - 50:cy + 50, cx - 50:cx + 50] = NODATA_F
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with rasterio.open(out_path, "w", driver="GTiff", height=h, width=w, count=6,
                        dtype="float32", crs=crs, transform=transform, nodata=NODATA_F,
@@ -243,6 +248,7 @@ def build_meta(args, payload: dict, prob: np.ndarray, mask: np.ndarray, unc: np.
             "before_nir_B08 (band5)",
         ],
         "uncertainty_definition": UNCERTAINTY_DEF + "；本产品按 3 种子逐像元方差输出",
+        "study_mask": getattr(args, "study_mask_info", None),
         "source_image_dates": in_meta.get("source_image_dates", "pending"),
         "calibration": {"method": "none（直接使用原始概率，未做 isotonic）"},
         "evaluation": {
@@ -286,6 +292,8 @@ def main() -> int:
     ap.add_argument("--in-metadata", default=str(IN_DIR / "hengzhou_p0_v01" / "hengzhou_input_metadata.json"))
     ap.add_argument("--stack", default="")
     ap.add_argument("--permanent-water", default="")
+    ap.add_argument("--study-mask", default="auto",
+                    help="研究区掩膜：auto=输入目录有则用；none=不用；或直接给路径")
     ap.add_argument("--weight", default=str(WEIGHT_DIR / "fusion_model_candidate_v01.pth"))
     ap.add_argument("--status", default="candidate", choices=["mock", "candidate", "final"])
     ap.add_argument("--version", default="v01")
@@ -294,6 +302,8 @@ def main() -> int:
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--max-tiles", type=int, default=0, help=">0 时只跑前 N 个滑窗（冒烟用）")
     ap.add_argument("--synthetic", action="store_true", help="用合成栈跑通链路")
+    ap.add_argument("--regen-synthetic", action="store_true",
+                    help="强制重建合成栈（合成器改动后用）")
     ap.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
     args = ap.parse_args()
 
@@ -301,12 +311,23 @@ def main() -> int:
     ref = Path(args.ref)
     if not ref.exists():
         raise SystemExit(f"缺参考网格：{ref}\n先跑 python -m src.member_a.infer.fetch_b_handoff")
+
+    # 研究区掩膜：B 已冻结“有效范围 = study_area_mask == 1”，默认自动用
+    sm_path = None
+    if args.study_mask == "auto":
+        cand = IN_DIR / "hengzhou_p0_v01" / "study_area_mask_final_v01.tif"
+        sm_path = cand if cand.exists() else None
+    elif args.study_mask.lower() != "none":
+        sm_path = Path(args.study_mask)
+    if sm_path is not None and not sm_path.exists():
+        raise SystemExit(f"研究区掩膜不存在：{sm_path}")
+
     if args.synthetic and not args.stack:
         synth = IN_DIR / "hengzhou_synthetic_v01" / "hengzhou_stack_synthetic_v01.tif"
-        if synth.exists():
+        if synth.exists() and not args.regen_synthetic:
             print(f"synthetic stack reused: {synth.name} ({synth.stat().st_size/1e6:.1f} MB)")
         else:
-            make_synthetic_stack(ref, synth)
+            make_synthetic_stack(ref, synth, sm_path)
         args.stack = str(synth)
     if not args.stack:
         raise SystemExit("缺影像栈：--stack 或 --synthetic")
@@ -345,6 +366,21 @@ def main() -> int:
         stack_u8 = src.read(indexes=[1, 2, 3, 4, 5], out_dtype="uint8")
         valid = read_valid(src, ref, h, w)
         band6 = src.read(6).astype(np.float32) if src.count >= 6 and src.dtypes[5] == "float32" else None
+
+    args.study_mask_info = None
+    if sm_path is not None:
+        with rasterio.open(sm_path) as sm:
+            if (sm.height, sm.width) != (h, w):
+                raise SystemExit(f"研究区掩膜尺寸 {sm.width}x{sm.height} 与影像栈 {w}x{h} 不一致")
+            inside = sm.read(1) == 1
+        valid &= inside
+        args.study_mask_info = {
+            "file": sm_path.name,
+            "inside_px": int(inside.sum()),
+            "inside_area_km2": round(float(inside.sum()) * PIXEL_AREA_M2 / 1e6, 3),
+        }
+        print(f"  study mask applied: {args.study_mask_info['inside_px']:,} px = "
+              f"{args.study_mask_info['inside_area_km2']} km2")
 
     prob, unc, count = infer_stack(models, stack_u8, valid, payload["arch"],
                                    args.tile, args.stride, args.batch, device, args.max_tiles)
@@ -388,8 +424,10 @@ def main() -> int:
           f"flood {int((mask == 1).sum()):,} px = {meta['coverage']['pred_area_km2']:.3f} km2, "
           f"prob_max={meta['coverage']['prob_max']}, unc_max={meta['coverage']['unc_max']}")
 
-    rc = subprocess.run([sys.executable, str(VERIFIER), "--dir", str(out_dir), "--ref", str(ref)],
-                        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    cmd = [sys.executable, str(VERIFIER), "--dir", str(out_dir), "--ref", str(ref)]
+    if sm_path is not None:
+        cmd += ["--study-mask", str(sm_path)]
+    rc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     print("-" * 60)
     print((rc.stdout or "").strip())
 

@@ -65,8 +65,12 @@ def _grid_check(src, ref_crs, ref_t, ref_w, ref_h, tag, fail, warn):
         fail("[%s] 必须单波段，实际 %d 波段" % (tag, src.count))
 
 
-def check_dir(d, ref_path):
-    """返回 [(level, message), ...]，level ∈ {OK, WARN, FAIL}"""
+def check_dir(d, ref_path, study_mask_path=None):
+    """返回 [(level, message), ...]，level ∈ {OK, WARN, FAIL}
+
+    study_mask_path 给定后，按 B 冻结的“研究区有效范围 = study_area_mask == 1”判定：
+    研究区内必须全部有效，研究区外必须全为 NoData。
+    """
     res = []
 
     def ok(m):
@@ -97,6 +101,14 @@ def check_dir(d, ref_path):
     if any(v is None for v in files.values()):
         return res
     ok("四个文件均已找到")
+
+    inside = None
+    if study_mask_path:
+        try:
+            with rasterio.open(study_mask_path) as sm:
+                inside = sm.read(1) == 1
+        except Exception as e:
+            fail("研究区掩膜无法打开: %s" % e)
 
     # ---------- metadata ----------
     threshold = None
@@ -159,7 +171,29 @@ def check_dir(d, ref_path):
         else:
             ok("[flood_probability] 值域 [%.4f, %.4f]" % (vmin, vmax))
         cover = valid.mean()
-        if cover < 0.99:
+        if inside is not None:
+            if inside.shape != valid.shape:
+                fail("[覆盖率] 研究区掩膜尺寸与概率栅格不一致")
+            else:
+                n_in = int(inside.sum())
+                miss = int((inside & ~valid).sum())
+                leak = int((~inside & valid).sum())
+                miss_ratio = miss / max(n_in, 1)
+                # 源数据本身允许极少像元缺测（B 的光学合成就有 8 个），但不允许成片漏覆盖
+                if miss_ratio > 1e-3:
+                    fail("[覆盖率] 研究区内 %d 像元（%.3f%%）为 NoData，超过 0.1%% 上限"
+                         % (miss, 100.0 * miss_ratio))
+                elif miss:
+                    warn("[覆盖率] 研究区内 %d 像元（%.4f%%）为 NoData，应为源数据缺测"
+                         % (miss, 100.0 * miss_ratio))
+                else:
+                    ok("[覆盖率] 研究区 %d 像元（%.3f km2）全部有效"
+                       % (n_in, n_in * 100.0 / 1e6))
+                if leak:
+                    warn("[覆盖率] 研究区外仍有 %d 像元有效（应置 NoData）" % leak)
+                else:
+                    ok("[覆盖率] 研究区外全部为 NoData")
+        elif cover < 0.99:
             warn("[flood_probability] 有效像元仅占 %.1f%%，检查是否漏覆盖研究区" % (cover * 100))
     else:
         fail("[flood_probability] 全部是 NoData")
@@ -292,6 +326,8 @@ def main():
     ap = argparse.ArgumentParser(description="A→B 栅格接口校验器")
     ap.add_argument("--dir", help="A 输出的目录")
     ap.add_argument("--ref", help="参考栅格 reference grid")
+    ap.add_argument("--study-mask", default=None,
+                    help="研究区掩膜（!=0 为研究区内），给定后按掩膜判覆盖率")
     ap.add_argument("--selftest", action="store_true", help="自检（不需要真实数据）")
     a = ap.parse_args()
 
@@ -304,7 +340,7 @@ def main():
     print("目录: %s" % a.dir)
     print("参考: %s" % a.ref)
     print("-" * 68)
-    res = check_dir(a.dir, a.ref)
+    res = check_dir(a.dir, a.ref, a.study_mask)
     for lv, m in res:
         print("  %-4s %s" % (lv, m))
     nf = sum(1 for lv, _ in res if lv == "FAIL")
