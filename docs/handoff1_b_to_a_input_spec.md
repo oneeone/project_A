@@ -168,7 +168,48 @@ A 收到后即可完成：滑窗推理框架、边缘 padding 策略、四件套
 2. 第 4 节的波段顺序与标度是否同意，特别是第 6 波段保留原始 dB；
 3. 第四通道确认为 B08。
 
-## 12. 变更记录
+## 12. B 侧执行步骤（按序执行，不要跳步）
+
+### P0：不需要任何卫星影像，今天就能完成
+
+| # | 动作 | 产出 | 自检 |
+|---|---|---|---|
+| 1 | 取得横州市权威行政边界，记录来源、版本、许可证（若用 OSM，记 relation ID 与查询时间） | 边界矢量，登记进 `docs/data_catalog.csv` | 能被 GIS 正常打开，坐标系可识别 |
+| 2 | 由边界外包矩形向外取整到 10 m，生成**全 `-9999` 空参考栅格** | `hengzhou_reference_grid_final_v01.tif` | `EPSG:32649`、10 m、无数据 |
+| 3 | 按参考网格生成 1 km 评估单元表 | `hengzhou_grid_1km.json`（`grid_id`、`center_x`、`center_y`、`grid_area_km2`） | 与 10 m 栅格同原点，`grid_id` 连续无重复 |
+| 4 | 写 `hengzhou_input_metadata.json` 骨架，宽高与 `transform` 填真实值，其余字段先留空并标注 `pending` | `hengzhou_input_metadata.json` v01 | 字段与第 6 节模板一致 |
+| 5 | 交付：json 提交进仓库，tif 放共享目录；通知 A；写 `docs/change_log.md` | 交接记录 | A 能拉到 json、能打开 tif |
+
+**步 1-5 完成后立即通知 A**，A 当天即可把横州推理框架、边缘 padding、四件套导出与契约校验全部写完并自测。
+
+### P1：数据下载，可与 P0 并行
+
+| # | 数据 | 要求 |
+|---|---|---|
+| 6 | Sentinel-1 GRD | 灾前/灾后**同轨道方向、同相对轨道、同极化**；优先 VV；与 GF-3 HH 的物理差异写进论文局限性 |
+| 7 | Sentinel-2 L2A | 灾前最近的低云影像；取 B02/B03/B04/B08 四个波段 |
+| 8 | JRC Global Surface Water occurrence | 裁剪到研究区，阈值写进 `permanent_water_threshold` |
+| 9 | Copernicus DEM GLO-30 | B 做地形校正与 Q3 用；同时供 C 做可达性 |
+
+### P2：预处理与组栈（P1 到齐后约半天）
+
+| # | 动作 | 关键要求 |
+|---|---|---|
+| 10 | 重采样到参考网格 | 连续量双线性，分类量与掩膜最近邻；不得改变像元对齐 |
+| 11 | SAR → uint8 | 取 dB 的 1%/99% 分位线性映射；`p1/p99` 写入 metadata；**第 6 波段保留原始 dB** |
+| 12 | 光学 → uint8 | `clip(round(refl/10000*255), 0, 255)` |
+| 13 | 组栈 | 6 波段，顺序严格按第 4.1 节：`after_sar_uint8, red, green, blue, nir(B08), after_sar_db` |
+| 14 | NoData 处理 | 置 `-9999`，**禁止 0 填充** |
+| 15 | 自检 | 四张栅格 `crs/transform/width/height` 完全一致；波段数 6；dB 合理（水体约 −20，建成区约 0）；无 NaN/Inf |
+| 16 | 交付 | 四件套齐备 + metadata 填满 + 通知 A + 写 `change_log` |
+
+### 三条禁令（违反会直接导致返工）
+
+1. **不要对 A 的 mask 再做“减去灾前水体”差集**：`label_semantics = newly_inundated_only` 已定稿（见 `docs/contracts.md` §6.3），再做一次会重复扣除。
+2. **不要修改 A 交付的栅格**：掩膜、概率、不确定性只读。
+3. **不要用 0 填充 NoData**：0 会被模型识别为极暗水体，直接产生假淹没。
+
+## 13. 变更记录
 
 | 日期 | 版本 | 变更 | 负责人 |
 |---|---|---|---|
