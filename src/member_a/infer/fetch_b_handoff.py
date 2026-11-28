@@ -35,6 +35,7 @@ IN_DIR = ROOT / "成员A产出" / "05_输入"
 # 交接一四件套在 B 分支中的路径（P0 已交前三项）
 REQUIRED = {
     "reference_zip": "outputs/samples/hengzhou_reference_grid_final_v01.zip",
+    "spatial_zip": "outputs/samples/hengzhou_spatial_contract_final_v01.zip",
     "grid_1km": "outputs/tables/hengzhou_grid_1km.json",
     "input_metadata": "outputs/tables/hengzhou_input_metadata.json",
 }
@@ -151,11 +152,40 @@ def main() -> int:
     if grid_path.exists():
         grid = json.loads(grid_path.read_text(encoding="utf-8"))
         cells = grid.get("cells", grid)
+        ids = [c["grid_id"] for c in cells]
         grid_info = {
             "cell_count": len(cells),
-            "unique_ids": len({c["grid_id"] for c in cells}) == len(cells),
+            "unique_ids": len(set(ids)) == len(ids),
+            "ids_continuous": set(ids) == {f"G{i:06d}" for i in range(1, len(cells) + 1)},
+            "has_pixel_windows": all(
+                {"row_start", "row_stop", "column_start", "column_stop"} <= set(c)
+                for c in cells),
             "origin_m": grid.get("origin_m") if isinstance(grid, dict) else None,
         }
+
+    # 研究区掩膜：B 已冻结“有效范围必须读 study_area_mask == 1”，A 侧据此定有效足迹
+    mask_info: dict = {}
+    sm_path = out_dir / "study_area_mask_final_v01.tif"
+    if sm_path.exists() and geometry:
+        import numpy as np
+        import rasterio
+
+        with rasterio.open(sm_path) as ds:
+            arr = ds.read(1)
+            uniq, counts = np.unique(arr, return_counts=True)
+            inside = int(counts[uniq == 1].sum())
+            mask_info = {
+                "dtype": ds.dtypes[0],
+                "nodata": ds.nodata,
+                "matches_reference": (
+                    str(ds.crs) == geometry["crs"]
+                    and (ds.width, ds.height) == (geometry["width"], geometry["height"])
+                    and all(abs(a - b) <= 1e-9 for a, b in
+                            zip(ds.transform[:6], geometry["transform"]))),
+                "unique": {int(u): int(c) for u, c in zip(uniq, counts)},
+                "inside_px": inside,
+                "inside_area_km2": round(inside * 100.0 / 1e6, 3),
+            }
 
     manifest = {
         "source_rev": args.rev,
@@ -165,6 +195,7 @@ def main() -> int:
         "geometry": geometry,
         "metadata_matches_reference": meta_matches,
         "grid_1km": grid_info,
+        "study_area_mask": mask_info,
         "b_contract_module": b_contract,
         "p1_pending": p1_status,
     }
@@ -183,7 +214,12 @@ def main() -> int:
               f"nodata={geometry['nodata']} unique={geometry['unique_values']}")
         print(f"  metadata_matches_reference={meta_matches}")
     if grid_info:
-        print(f"  grid cells={grid_info['cell_count']} unique_ids={grid_info['unique_ids']}")
+        print(f"  grid cells={grid_info['cell_count']} unique_ids={grid_info['unique_ids']} "
+              f"ids_continuous={grid_info['ids_continuous']} "
+              f"pixel_windows={grid_info['has_pixel_windows']}")
+    if mask_info:
+        print(f"  study mask matches={mask_info['matches_reference']} "
+              f"values={mask_info['unique']} inside={mask_info['inside_area_km2']} km2")
     print(f"  b_contract={b_contract}")
     print(f"  p1: stack={p1_status['stack']} permanent_water={p1_status['permanent_water']}")
     return 1 if missing else 0
